@@ -45,7 +45,6 @@
 #
 #	Done?
 //defines done?
-
 //set to true if done
 $is_setup = true;
 
