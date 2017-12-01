@@ -1,0 +1,11 @@
+.table{}
+.table td{
+    border: 1px dotted;
+    padding:7px;
+}
+code{
+    background-color: #0a2b1d;
+    color: #c2c838;
+    padding: 4px;
+    line-height: 23px;
+}

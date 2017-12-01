@@ -1,0 +1,48 @@
+<md-content layout-padding ng-controller="installCtrl">
+    <h1>Setup</h1>
+    <p>
+        This instance is bundled with 4 components "src/concr", "src/neoan", "src/aceEditor" and this setup ("src/install") as well as
+        one frame ("frame/concr"). <br>
+        This setup is intended to help you setting up a minimal configuration to run "concr"
+    </p>
+    <h3>Testing config...</h3>
+    <p ng-if="api">
+        <i class="fa fa-check"></i>
+        The Javascript-Ajax-API works!
+    </p>
+    <p ng-if="!api">
+        <i class="fa fa-times"></i>
+        There is an issue with the JS-API. Please debug. <br>
+        config.php correct? .htaccess correct? <br>
+        Use your browsers debugger and execute the call: <br>
+        <md-button ng-click="test.api()">
+            test
+        </md-button>
+
+    </p>
+
+    <p ng-if="{{connection}}==0">
+        <i class="fa fa-times"></i>
+        MYSQL-connection could not be established. Please check "frame/concr/config.php" for credentials.
+    </p>
+    <p ng-if="{{connection}}==1">
+        <i class="fa fa-check"></i>
+        MYSQL-connection looks fine.
+    </p>
+    <p ng-if="{{database}}==0&&{{connection}}==1">
+        While the connection works, there does not seem to be a database "{{db_name}}". <br>
+        <md-button ng-click="create.database()" class="md-raised md-primary">
+            Try to create database
+        </md-button>
+        (you can also change "frame/concr/config.php" accordingly or create a database manually (e.g. in phpmyadmin))
+    </p>
+    <div ng-if="{{database}}==1&&{{connection}}==1&&api">
+        <h3>Looks fine</h3>
+        <p>
+            You may consider changing "default.php" in order to change the default controller to your current project.
+        </p>
+        <md-button href="{{base}}concr/" class="md-raised md-primary">
+            concr
+        </md-button>
+    </div>
+</md-content>

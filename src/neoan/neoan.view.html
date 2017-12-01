@@ -1,0 +1,341 @@
+<div ng-controller="neoanCtrl" layout-padding>
+    <h1>neoanPHP - Quick guide</h1>
+    <!-- button triggers function neoanCtrl.display(). See JS -->
+    <md-button class="md-raised" ng-click="display()">
+        Display myself for better understanding
+    </md-button>
+    <md-button class="md-raised" href="{{base}}concr/">
+        Go to concr
+    </md-button>
+    <!-- ngMaterial tabs-directive (third party) -->
+    <md-tabs md-dynamic-height md-border-bottom ng-if="code">
+        <md-tab label="PHP">
+            <!-- aceEditor directive. See component files if needed. -->
+            <ace-editor code="{{code.php}}" instance="php" release="release(code)"></ace-editor>
+        </md-tab>
+        <md-tab label="JS">
+            <ace-editor code="{{code.js}}" instance="javascript" release="release(code)"></ace-editor>
+        </md-tab>
+        <md-tab label="html">
+            <ace-editor code="{{code.html}}" instance="html" release="release(code)"></ace-editor>
+        </md-tab>
+    </md-tabs>
+
+    <!-- generated quick guide from here on -->
+    <!-- plain HTML in the view, not relevant for understanding the principles -->
+    <md-content layout="row" layout-padding>
+        <div>
+            <p>
+                Concr creates unicore-components per interface. <br>
+                When creating files manually, please apply naming conventions as per examples. <br>
+                A PHP-controller with a function "init" is callable per url-part (<u>URL</u>/demo executes /src/dem/demo.ctrl.php->init), every non-private function in a controller through API.
+                Unicore can run multiple projects simultaneously with a shared codebase, so initializing a "frame" (layout/project) is required to load all presets.
+                <br>
+                This also initializes the uni-singleton ($this->uni). this singleton provides all templating and project-specific functions while models, apps and assets are available to all frames.
+
+            </p>
+        </div>
+
+    </md-content>
+
+
+    <h2>Most important apps & their most common functions</h2>
+    <h3>load - Create sibling or model instances</h3>
+    <table class="table">
+        <tr>
+            <th>function</th>
+            <th>arguments</th>
+            <th>description</th>
+            <th>examples</th>
+        </tr>
+        <tr>
+            <td>load::model</td>
+            <td>Model-name-string</td>
+            <td>Creates static loading of models. Does not return, but rather ensures auto-loading in API-environments.</td>
+            <td>
+                <code>load::model('user');<br>$user = user_model::data($user_id);</code>
+            </td>
+        </tr>
+        <tr>
+            <td>load::controller</td>
+            <td>Model-name-string</td>
+            <td>Creates object of sibling PHP-controller. Can be assigned to the singleton or a variable.</td>
+            <td>
+                <code>$update = load::controller('profile');<br>$update->address($address);</code>
+            </td>
+        </tr>
+    </table>
+    <h3>session - Managing PHP session</h3>
+    <table class="table">
+        <tr>
+            <th>function</th>
+            <th>arguments</th>
+            <th>description</th>
+            <th>examples</th>
+        </tr>
+        <tr>
+            <td>session::login</td>
+            <td>Unique-id</td>
+            <td>Starts logged-in status and assignes user ID.</td>
+            <td>
+                <code>session::login($user_id)</code>
+            </td>
+        </tr>
+        <tr>
+            <td>session::is_logged_in</td>
+            <td></td>
+            <td>Returns boolean of current login-status.</td>
+            <td>
+                <code>if(session::is_logged_in()){ <br><br>}</code>
+            </td>
+        </tr>
+        <tr>
+            <td>session::user_id</td>
+            <td></td>
+            <td>Returns the id of accessing user. default: Autoincrement of user-table.</td>
+            <td>
+                <code>$user = user_model::data(session::user_id())</code>
+            </td>
+        </tr>
+        <tr>
+            <td>session::restricted</td>
+            <td></td>
+            <td>Restricts further execution if not logged in and redirects to default controller.</td>
+            <td>
+                <code>session::restricted();<br>// confidential code</code>
+            </td>
+        </tr>
+        <tr>
+            <td>session::api_restricted</td>
+            <td></td>
+            <td>Secures open functions towards non-session calls. Returns user-id or error.</td>
+            <td>
+                <code>$user_id = session::api_restricted();<br>// confidential code</code>
+            </td>
+        </tr>
+    </table>
+    <h3>db - Mysql</h3>
+    <table class="table">
+        <tr>
+            <th>function</th>
+            <th>arguments</th>
+            <th>description</th>
+            <th>examples</th>
+        </tr>
+        <tr>
+            <td>db::easy</td>
+            <td>Select-string, Condition-array(optional)</td>
+            <td>Smart shorthands for medium-depth queries. Returns array(assoc)</td>
+            <td>
+                <p>
+                    <code>db::easy('countries.*')</code>
+                    <br>
+                    SELECT * FROM countries
+                </p>
+                <p>
+                    <code>db::easy('user.id user_email.email',['user.id'=>1])</code>
+                    <br>
+                    SELECT user.id, user_email.email FROM user JOIN user_email ON user_email.user_id = user.id WHERE user.id = 1
+                </p>
+            </td>
+        </tr>
+        <tr>
+            <td>db::ask</td>
+            <td>(table-string, Operation-array or .sql-path), Select-array, Condition-array(optional)</td>
+            <td>Smart shorthands for deep queries. Returns array(assoc), index or affected rows</td>
+            <td>
+                <p>
+                    <code>db::ask('?user',['id'],['delete_date'=>'!'])</code>
+                    <br>
+                    SELECT id FROM user WHERE delete_date IS NOT NULL
+                </p>
+                <p>
+                    <code>db::ask('/query',['id'=>1])</code>
+                    <br>
+                    Uses /src/query/query.sql and substitutes {{id}} in the file
+                </p>
+                <p>
+                    <code>db::ask('user',['name'=>'demo'])</code>
+                    <br>
+                    INSERT INTO user SET name = "demo"
+                    <br>
+                    (Returns auto-increment-id)
+                </p>
+                <p>
+                    <code>db::ask('user',['name'=>'demo'],['id'=>1])</code>
+                    <br>
+                    UPDATE user SET name = "demo" WHERE id = 1
+                    <br>
+                    (Returns number of affected rows)
+                </p>
+            </td>
+        </tr>
+        <tr>
+            <td>db::data</td>
+            <td>MySql-string</td>
+            <td>Direct query injection. Returns array(assoc) and result in ['data']</td>
+            <td>
+                <p>
+                    <code>db::data('SELECT * from user')</code>
+
+                </p>
+            </td>
+        </tr>
+        <tr>
+            <td>(ask/easy) Selectandi</td>
+            <td>combinable pre&post-fixes for selection</td>
+            <td>Enables common MySql-tasks within functions</td>
+            <td>
+                <p>
+                    <code>db::easy('#user.insert_date')</code>
+                    <br>
+                    SELECT UNIX_TIMESTAMP(insert_date)*1000 as insert_date
+                </p>
+                <p>
+                    <code>db::easy('user.name:user_name')</code>
+                    <br>
+                    SELECT name as user_name FROM user
+                </p>
+            </td>
+        </tr>
+        <tr>
+            <td>(ask/easy) Operandi</td>
+            <td>operational fixes</td>
+            <td>Enables common MySql-tasks within functions</td>
+            <td>
+                <p>
+                    <code>db::easy('user.*',['name'=>''])</code>
+                    <br>
+                    SELECT * FROM user WHERE name IS NULL
+                </p>
+                <p>
+                    <code>db::easy('user.*',['name'=>'!'])</code>
+                    <br>
+                    SELECT * FROM user WHERE name IS NOT NULL
+                </p>
+                <p>
+                    <code>db::easy('user.*',['id'=>'>3'])</code>
+                    <br>
+                    SELECT * FROM user WHERE id > 3
+                </p>
+                <p>
+                    <code>db::ask('user',['insert_date'=>'.'])</code>
+                    <br>
+                    INSERT INTO user SET insert_date = NOW()
+                </p>
+            </td>
+        </tr>
+    </table>
+    <h3>stringops - Modifier</h3>
+    <table class="table">
+        <tr>
+            <th>function</th>
+            <th>arguments</th>
+            <th>description</th>
+            <th>examples</th>
+        </tr>
+        <tr>
+            <td>stringops::embrace</td>
+            <td>String-content, array(assoc)</td>
+            <td>embraces double-curlies and substitudes with array-values</td>
+            <td>
+                <code>
+                    $str = 'this is a {{variable}} string';<br>
+                    $arguments = ['variable'=>'boring']; <br>
+                    echo stringops::embrace($str,$arguments);
+                </code><br>
+                this is a boring string
+            </td>
+        </tr>
+        <tr>
+            <td>stringops::hardEmbrace</td>
+            <td>String-content, array(assoc)</td>
+            <td>embraces double-braces and substitudes with array-values</td>
+            <td>
+                <code>
+                    $str = 'this is a [[variable]] string';<br>
+                    $arguments = ['variable'=>'boring']; <br>
+                    echo stringops::embrace($str,$arguments);
+                </code><br>
+                this is a boring string
+            </td>
+        </tr>
+        <tr>
+            <td>stringops::encrypt</td>
+            <td>Content-string, Key-string</td>
+            <td>AES-encrypts content with 256Bit</td>
+            <td>
+                <code>
+                    stringops::encrypt('Password',$salt);
+                </code>
+            </td>
+        </tr>
+        <tr>
+            <td>stringops::decrypt</td>
+            <td>Content-string, Key-string</td>
+            <td>AES-decrypts content with 256Bit</td>
+            <td>
+                <code>
+                    stringops::decrypt('KUYUGEWFOJSAesls456aFhoO34a',$salt);
+                </code>
+            </td>
+        </tr>
+    </table>
+    <h3>other default apps</h3>
+    <div>
+        <ul>
+            <li>cache</li>
+            <li>curl</li>
+            <li>ftp</li>
+            <li>mail</li>
+            <li>mobile</li>
+            <li>pdf</li>
+            <li>t</li>
+            <li>zip</li>
+        </ul>
+    </div>
+    <h2>Most important superglobal functions</h2>
+    <table class="table">
+        <tr>
+            <th>function</th>
+            <th>arguments</th>
+            <th>description</th>
+            <th>examples</th>
+        </tr>
+        <tr>
+            <td>sub</td>
+            <td>number</td>
+            <td>reads url-parts starting with class-name</td>
+            <td>
+                current url: http://localhost/demo/hash/123/
+                <br>
+                <code>
+                    echo sub(1).'+'.sub(2);
+                </code>
+                <br>
+                hash+123
+
+            </td>
+        </tr>
+        <tr>
+            <td>redirect</td>
+            <td>Component-string</td>
+            <td>sets a header redirect to component (or default controller, is not set)</td>
+            <td>
+                <code>
+                    redirect('concr');
+                </code>
+            </td>
+        </tr>
+        <tr>
+            <td>style</td>
+            <td>Component-string</td>
+            <td>returns the path of a components style-sheet</td>
+            <td>
+                <code>
+                    $this->uni->addStylesheet(style('beautify'));
+                </code>
+            </td>
+        </tr>
+    </table>
+</div>

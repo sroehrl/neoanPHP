@@ -1,0 +1,358 @@
+<div ng-controller="concrCtrl" layout="column" flex ng-cloak>
+    <div class="container" layout="row" flex>
+        <md-sidenav md-component-id="men" md-is-locked-open="true" flex="15"  class="sidenav" md-whiteframe="5">
+            <md-list>
+                <md-list-item>
+                    <md-button class="md-primary md-hue-1" ng-click="state='element'">New Component</md-button>
+                </md-list-item>
+                <md-list-item>
+                    <md-button class="md-primary md-hue-1" ng-click="state='model'">New Model</md-button>
+                </md-list-item>
+                <md-list-item>
+                    <md-button class="md-primary md-hue-1" ng-click="state='directive'">New Directive</md-button>
+                </md-list-item>
+                <md-list-item>
+                    <md-button class="md-primary md-hue-1" ng-click="state='service'">New Service</md-button>
+                </md-list-item>
+                <md-list-item>
+                    <md-button class="md-primary md-hue-1" ng-click="state='frame'">New Frame</md-button>
+                </md-list-item>
+                <md-divider></md-divider>
+                <md-list-item>
+                    <md-button class="md-primary md-hue-1" ng-click="state=false">Merge</md-button>
+                </md-list-item>
+            </md-list>
+        </md-sidenav>
+        <div flex layout-padding>
+            <div ng-if="working">Working...</div>
+            <div ng-if="!state">
+                <h2>Welcome to concr</h2>
+                <p>Merge responsibly</p>
+
+                <div layout="row">
+                    <md-content flex="35">
+                        <md-button>This installation</md-button>
+                        <md-card>
+                            <md-card-content >
+                                <md-list >
+                                    <md-list-item ng-repeat="frame in frames">
+                                        <div flex>
+                                            <i class="fa fa-diamond"></i> {{frame.name}} ({{frame.version}})
+                                            <md-tooltip>Frame</md-tooltip>
+                                        </div>
+
+                                        <div class="md-secondary-container">
+                                            <i class="fa fa-chevron-right"></i>
+                                        </div>
+                                    </md-list-item>
+
+                                    <md-list-item ng-repeat="component in local.component">
+                                        <div flex>
+                                            <i class="fa fa-code"></i> {{component.name}} ({{component.version}})
+                                            <md-tooltip>Component-controller</md-tooltip>
+                                        </div>
+                                        <div class="md-secondary-container">
+                                            <i class="fa fa-chevron-right"></i>
+                                        </div>
+                                    </md-list-item>
+                                    <md-list-item ng-repeat="directive in local.directive">
+                                        <div flex>
+                                            <i class="fa fa-newspaper-o"></i> {{directive.name}} ({{directive.version}})
+                                            <md-tooltip>Directive</md-tooltip>
+                                        </div>
+                                        <div class="md-secondary-container">
+                                            <i class="fa fa-chevron-right"></i>
+                                        </div>
+                                    </md-list-item>
+                                    <md-list-item ng-repeat="factory in local.service">
+                                        <div flex>
+                                            <i class="fa fa-exchange"></i> {{factory.name}} ({{factory.version}})
+                                            <md-tooltip>Service</md-tooltip>
+                                        </div>
+                                        <div class="md-secondary-container">
+                                            <i class="fa fa-chevron-right"></i>
+                                        </div>
+                                    </md-list-item>
+                                    <md-list-item ng-repeat="model in local.model">
+                                        <div flex>
+                                            <i class="fa fa-database"></i> {{model.name}} ({{model.version}})
+                                            <span class="pointer" ng-click="installModel(model.name)" ng-if="model.installer">Install?</span>
+                                            <md-tooltip>Model</md-tooltip>
+                                        </div>
+                                        <div class="md-secondary-container">
+                                            <i class="fa fa-chevron-right"></i>
+                                        </div>
+                                    </md-list-item>
+                                    <md-list-item ng-repeat="hybrid in local.hybrid">
+                                        <div flex>
+                                            <i class="fa fa-link"></i> {{hybrid.name}}
+                                            (
+                                            <span ng-repeat="as in hybrid.as">
+                                                <i class="fa fa-code" ng-if="as=='component'"></i>
+                                                <i class="fa fa-newspaper-o" ng-if="as=='directive'"></i>
+                                                <i class="fa fa-exchange" ng-if="as=='service'"></i>
+                                            </span>{{hybrid.version}})
+                                            <md-tooltip>Hybrid</md-tooltip>
+                                        </div>
+                                        <div class="md-secondary-container">
+                                            <i class="fa fa-chevron-right"></i>
+                                        </div>
+                                    </md-list-item>
+                                </md-list>
+                            </md-card-content>
+
+                        </md-card>
+                    </md-content>
+                    <md-content flex="35" layout="column">
+                        <md-tabs md-selected="merge.environment" flex >
+                            <md-tab label="local">
+                                <md-tab-content layout-padding>
+                                    <md-list flex>
+                                        <md-list-item>
+                                            <div>&nbsp;</div>
+                                            <div>
+                                                <a class="pointer" ng-click="merge.navigate(false)">
+                                                    <i class="fa fa-level-up"></i>
+                                                </a>
+                                            </div>
+                                        </md-list-item>
+                                        <md-list-item ng-repeat="folder in merge.remoteStructure" layout-padding>
+                                            <div>
+                                                <i ng-click="merge.pull(folder)" class="fa fa-chevron-left pointer" ng-hide="folder.type=='folder'"></i>
+                                                <span ng-show="folder.type=='folder'">&nbsp;</span>
+                                            </div>
+                                            <div>
+                                                <a class="pointer" ng-click="merge.navigate(folder.name)">
+                                                    <i class="fa fa-folder" ng-if="folder.type=='folder'"></i>
+                                                    <i class="fa fa-coffee" ng-if="folder.type=='directive'"></i>
+                                                    <i class="fa fa-code" ng-if="folder.type=='component'"></i>
+                                                    <i class="fa fa-diamond" ng-if="folder.type=='frame'"></i>
+                                                    <i class="fa fa-cubes" ng-if="folder.type=='nphp'"></i>
+                                                    {{folder.name}} {{folder.version}}
+                                                </a>
+                                            </div>
+                                            <div ng-if="folder.type==''">
+
+                                            </div>
+                                        </md-list-item>
+                                    </md-list>
+
+                                </md-tab-content>
+                            </md-tab>
+                            <md-tab label="network">
+                                <md-tab-content layout-padding>
+                                    <p>NYI</p>
+                                </md-tab-content>
+                            </md-tab>
+                        </md-tabs>
+                    </md-content>
+                    <div flex>
+
+                    </div>
+
+                </div>
+
+            </div>
+            <!-- new directive -->
+            <form ng-if="!working" name="frameForm" ng-submit="create(specs,'directive')" ng-show="state=='directive'" layout="column">
+                <md-input-container>
+                    <label>Name</label>
+                    <input minlength="3" type="text" ng-model="specs.name" required>
+                </md-input-container>
+                <md-input-container>
+                    <label>Restriction</label>
+                    <input type="text" ng-model="specs.restrict" required ng-init="specs.restrict='EA'">
+                </md-input-container>
+                <md-checkbox ng-model="specs.ctrl" aria-label="ctrl?">
+                    Needs injections
+                </md-checkbox>
+                <md-input-container ng-if="specs.ctrl">
+                    <label>Include comma separated</label>
+                    <input type="text" ng-model="specs.injection">
+                </md-input-container>
+                <md-button type="submit" class="md-primary">CREATE</md-button>
+            </form>
+            <!-- new model -->
+            <form ng-if="!working" name="frameForm" ng-submit="create(specs,'model')" ng-show="state=='model'" layout="column">
+                <md-input-container>
+                    <label>Name</label>
+                    <input minlength="3" type="text" ng-model="specs.name" required>
+                </md-input-container>
+                <md-checkbox ng-model="specs.mysql" aria-label="mysql?">
+                    Uses MYSQL-database
+                </md-checkbox>
+                <div ng-if="specs.mysql">
+                    <div ng-repeat="table in specs.tables">
+                        <md-input-container>
+                            <label>Table-Name</label>
+                            <input type="text" ng-model="specs.tables[$index].name">
+                        </md-input-container>
+                        <div layout="row" ng-show="specs.tables[$index].name.length>2">
+                            <div ng-repeat="field in table.fields">
+                                <div style="border:1px dotted;">
+                                    <md-input-container>
+                                        <label>Name</label>
+                                        <input type="text" ng-model="table.fields[$index].name" required>
+                                    </md-input-container>
+                                    <md-select ng-model="table.fields[$index].type">
+                                        <md-option value="int">int</md-option>
+                                        <md-option value="varchar">varchar</md-option>
+                                        <md-option value="timestamp">timestamp (current timestamp)</md-option>
+                                        <md-option value="datetime">datetime</md-option>
+                                    </md-select>
+                                </div>
+                            </div>
+                            <div layout-align="center center">
+                                <md-button ng-click="add.field($index)" class="md-fab md-mini">
+                                    <i class="fa fa-plus"></i>
+                                </md-button>
+                            </div>
+                        </div>
+
+                    </div>
+                    <div>
+                        <md-button ng-click="add.table(specs.tables[0].name+'_id'||null)" class="md-fab md-mini">
+                            <i class="fa fa-plus"></i>
+                        </md-button>
+                    </div>
+                </div>
+
+                <md-checkbox ng-model="specs.service" aria-label="service?">
+                    Auto-create service?
+                </md-checkbox>
+
+                <md-button type="submit" class="md-primary">CREATE</md-button>
+            </form>
+            <!-- new service -->
+            <form ng-if="!working" name="frameForm" ng-submit="create(specs,'service')" ng-show="state=='service'" layout="column">
+                <md-input-container>
+                    <label>Name</label>
+                    <input minlength="3" type="text" ng-model="specs.name" required>
+                </md-input-container>
+                <md-button type="submit" class="md-primary">CREATE</md-button>
+            </form>
+            <!-- new frame -->
+            <form ng-if="!working" name="frameForm" ng-submit="create(specs,'frame')" ng-show="state=='frame'" layout="column">
+                <p>Create a new frame / project</p>
+                <md-input-container>
+                    <label>Name</label>
+                    <input minlength="3" type="text" ng-model="specs.name" required>
+                </md-input-container>
+                <md-content layout="row">
+                    <md-input-container flex="45">
+                        <md-select ng-model="specs.frame" placeholder="Structure" required>
+                            <md-option ng-value="$index" ng-repeat="opt in structure">{{ opt.name }}</md-option>
+                        </md-select>
+                    </md-input-container>
+                    <pre ng-bind="structure[specs.frame].content">
+                        Frame
+                    </pre>
+                </md-content>
+                <md-content layout="row">
+                    <md-input-container>
+                        <label>MYSQL DB-host</label>
+                        <input minlength="3" type="text" ng-model="specs.db_host" required>
+                    </md-input-container>
+                    <md-input-container>
+                        <label>MYSQL DB-name</label>
+                        <input minlength="3" type="text" ng-model="specs.db_name" required>
+                    </md-input-container>
+                    <md-input-container>
+                        <label>MYSQL DB-user</label>
+                        <input type="password" ng-model="specs.db_user">
+                    </md-input-container>
+                    <md-input-container>
+                        <label>MYSQL DB-password</label>
+                        <input type="password" ng-model="specs.db_password">
+                    </md-input-container>
+                </md-content>
+                <md-input-container>
+                    <label>API-point</label>
+                    <input minlength="3" type="text" ng-model="specs.api_point" required>
+                </md-input-container>
+                <md-checkbox ng-model="specs.translate" aria-label="translate?">
+                    Enable multi-language?
+                </md-checkbox>
+                <md-checkbox ng-model="specs.smtp" aria-label="smtp?">
+                    SMTP-mailing?
+                </md-checkbox>
+                <md-content layout="row" ng-if="specs.smtp">
+                    <md-input-container flex="30">
+                        <label>SMTP host</label>
+                        <input minlength="3" type="text" ng-model="specs.mail_smtp_host" ng-required="specs.smtp">
+                    </md-input-container>
+                    <md-input-container flex="30">
+                        <label>SMTP user</label>
+                        <input minlength="3" type="text" ng-model="specs.mail_smtp_user" ng-required="specs.smtp">
+                    </md-input-container>
+                    <md-input-container flex="30">
+                        <label>SMTP password </label>
+                        <input type="password" ng-model="specs.mail_smtp_pw" ng-required="specs.smtp">
+                    </md-input-container>
+                </md-content>
+                <md-content layout="row" ng-if="specs.smtp">
+                    <md-input-container flex="30">
+                        <label>Default Sender</label>
+                        <input minlength="3" type="text" ng-model="specs.mail_from"  ng-required="specs.smtp">
+                    </md-input-container>
+                    <md-input-container flex="30">
+                        <label>Default "From"-name</label>
+                        <input minlength="3" type="text" ng-model="specs.mail_from_name"  ng-required="specs.smtp">
+                    </md-input-container>
+                    <md-input-container flex="30">
+                        <label>Default subject</label>
+                        <input type="text" ng-model="specs.mail_subject" ng-required="specs.smtp">
+                    </md-input-container>
+                </md-content>
+                <md-input-container>
+                    <label>Angular-modules</label>
+                    <input  type="text" ng-model="specs.modules">
+                </md-input-container>
+                <md-button type="submit" class="md-primary">CREATE</md-button>
+            </form>
+            <!-- new component -->
+            <form ng-if="!working" name="elementForm" ng-submit="create(specs,'elem')" ng-show="state=='element'" layout="column">
+                <p>Create a new src-component</p>
+                <md-card ng-if="frames.length<1">
+                    <md-card-title>
+                        <md-card-title-text >
+                            <span class="md-headline" >There is no frame! Create a frame first!</span>
+                        </md-card-title-text>
+                    </md-card-title>
+                </md-card>
+                <md-input-container>
+                    <md-select ng-model="specs.frame" placeholder="Frame" required >
+                        <md-option ng-value="opt.name" ng-repeat="opt in frames">{{opt.name}} ({{opt.version}})</md-option>
+                    </md-select>
+                </md-input-container>
+                <md-input-container>
+                    <label>Name</label>
+                    <input minlength="3" type="text" ng-model="specs.name" required>
+                </md-input-container>
+                <md-checkbox ng-model="specs.view" aria-label="view?" ng-init="specs.view=true">
+                    Has view
+                </md-checkbox>
+                <md-checkbox ng-model="specs.ctrl" aria-label="ctrl?" ng-init="specs.ctrl=true">
+                    Has ng-controller
+                </md-checkbox>
+                <md-input-container ng-if="specs.ctrl">
+                    <label>Include comma separated</label>
+                    <input type="text" ng-model="specs.include">
+                </md-input-container>
+                <md-checkbox ng-model="specs.directives" aria-label="ctrl?" >
+                    Has ng-directives
+                </md-checkbox>
+                <md-input-container ng-if="specs.directives">
+                    <label>Include comma separated</label>
+                    <input type="text" ng-model="specs.includeDirectives">
+                </md-input-container>
+                <md-checkbox ng-model="specs.style" aria-label="style?">
+                    Has own stylesheet?
+                </md-checkbox>
+                <md-button type="submit" class="md-primary">CREATE</md-button>
+            </form>
+
+        </md-content>
+    </div>
+
+</div>

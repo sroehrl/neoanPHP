@@ -1,0 +1,79 @@
+<div class="angular-meditor">
+    <div class="angular-meditor-toolbar" style="top:{{position.top}}px;left:{{position.left}}px;" ng-class="{'angular-meditor-toolbar--show':model.showToolbar}">
+        <ul ng-show="!target">
+            <li>
+                <button class="mediator-button-bold" ng-click="SimpleAction('bold')" type="button" ng-class="{'bold':'meditor-button--active'}[styles.fontWeight]">
+                    <i class="fa fa-bold"></i>
+                </button>
+            </li>
+            <li>
+                <button class="mediator-button-italic" ng-click="SimpleAction('italic')" type="button" ng-class="{'italic':'meditor-button--active'}[styles.fontStyle]">
+                    <i class="fa fa-italic"></i>
+                </button>
+            </li>
+
+            <li>
+                <button class="meditor-button-underline" ng-click="SimpleAction('underline')" type="button" ng-class="{'underline':'meditor-button--active'}[styles.textDecoration]">
+                    <i class="fa fa-underline"></i>
+                </button>
+            </li>
+            <li>
+                <button class="meditor-button-underline" ng-click="target={}" type="button" ng-class="{'underline':'meditor-button--active'}[styles.textDecoration]">
+                    <i class="fa fa-link"></i>
+                </button>
+            </li>
+            <li>
+                <button class="meditor-button-link" ng-click="SimpleAction('justifyLeft')" type="button" ng-class="{'start':'meditor-button--active'}[styles.textAlign]">
+                    <i class="fa fa-align-left"></i>
+                </button>
+            </li>
+            <li>
+                <button class="meditor-button-underline" ng-click="SimpleAction('justifyCenter')" type="button" ng-class="{'center':'meditor-button--active'}[styles.textAlign]">
+                    <i class="fa fa-align-justify"></i>
+                </button>
+            </li>
+            <li>
+                <label class="meditor-select">
+                    <select ng-model="size" ng-options="s.value as s.label for s in sizeOptions" class="meditor-size-selector"></select>
+                </label>
+            </li>
+            <li>
+                <label class="meditor-select">
+                    <select ng-model="family" ng-options="s as s.label for s in familyOptions" class="meditor-family-selector"></select>
+                </label>
+            </li>
+            <li>
+                <label class="meditor-select">
+                    <select ng-model="color" ng-options="s.value as s.label for s in colorOptions" class="meditor-family-selector"></select>
+                </label>
+            </li>
+        </ul>
+        <ul ng-show="target">
+            <li>
+                <label class="meditor-select">
+                    <select ng-model="target.type" ng-change="linkr()" class="meditor-family-selector">
+                        <option value="" disabled selected>Link type</option>
+                        <option value="internal"><t>internal</t></option>
+                        <option value="external"><t>external</t></option>
+                    </select>
+                </label>
+            </li>
+            <li ng-show="target.type=='internal'">
+                <label class="meditor-select">
+                    <!--<select ng-model="target.url" ng-change="linkr()" ng-options="s.id as s.name for s in links" class="meditor-family-selector">-->
+                    <select ng-model="target.url" ng-change="linkr()" ng-options="s.url as s.name for s in links" class="meditor-family-selector">
+                        <option value="" disabled><t>Choose page</t></option>
+                    </select>
+                </label>
+            </li>
+            <li>
+                <button ng-click="target=false">
+                    <i class="fa fa-times"></i>
+                </button>
+            </li>
+        </ul>
+    </div>
+    <div ng-if="bind" class="angular-mediator-content" contenteditable meditor-contenteditable ng-model="model.ngModel" ng-transclude></div>
+    <div ng-if="!bind" class="angular-mediator-content"  ng-model="model.ngModel" ng-transclude></div>
+
+</div>
