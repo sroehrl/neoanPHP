@@ -53,7 +53,6 @@ $constants = [
         ],
         ['src' => frame('concr').'/concr.js', 'data' => [
             'base' => base,
-            'config'=>$config,
             'signedIn'=>(session::is_logged_in()?'yes':'no')]],
         ['src' => base .'/_neoan/js/filter.js', 'data' => []],
         ['src' => base .'/_neoan/js/directives.js', 'data' => []]

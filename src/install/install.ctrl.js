@@ -8,11 +8,6 @@ app.controller('installCtrl',['com','$scope',function(com,$scope){
                 }
 
             })
-        },
-        user:function(){
-            com('install::testUser').success(function(data){
-
-            })
         }
     };
     $scope.test.api();

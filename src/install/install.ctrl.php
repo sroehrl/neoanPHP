@@ -19,7 +19,6 @@ class install extends unicore{
             'database'=>(int)!$db['error'],
             'db_name'=>db_name
         ]);
-        $this->uni->include_service('user');
         $this->uni->output();
     }
     function check_mysql(){
