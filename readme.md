@@ -34,7 +34,7 @@ help developers start projects rapidly while providing a framework that enables 
  <li>pdf (based on FPDF)</li>
  <li>session (security-handling)</li>
  <li>soap</li>
- <li>stripe</li>
+ <li>stripe (payment provider)</li>
  <li>t (i18n)</li>
  <li>zip</li>
  </ul>  
