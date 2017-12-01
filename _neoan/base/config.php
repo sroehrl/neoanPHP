@@ -29,40 +29,6 @@
     } else {
         define('live', false);
     }
-    if(live){
-        define('base','/getscents');
-
-        //db-host
-        define('db_host','localhost');
-        //db-name
-        define('db_name','fr8xadfn_getscents');
-        //db-user
-        define('db_user','fr8xadfn_gets');
-        //db-password
-        define('db_password','iPH1pH9+,UZg');
-
-        //api-entry-point
-        define('api_point', 'http://fr8.xyz/getscents/apps/api.app.php');
-        //socket
-        define('socket', 'http://fr8.xyz');
-    } else {
-        define('base','/eodiffuser/');
-
-        //db-host
-        define('db_host','localhost');
-        //db-name
-        define('db_name','eodiffuser');
-        //db-user
-        define('db_user','root');
-        //db-password
-        define('db_password','STR8682');
-
-        //api-entry-point
-        define('api_point', 'http://localhost/getScents/apps/api.app.php');
-        //socket
-        define('socket', '127.0.0.1');
-
-    }
 
 
 // Mailing
