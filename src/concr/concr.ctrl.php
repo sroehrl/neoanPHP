@@ -11,6 +11,8 @@
  * It is written to fit into one component and therefore HEAVILY violates code-separation!
  */
 
+require_once(__DIR__.'/worker/worker.php');
+
 class concr extends unicore
 {
     function init()
@@ -24,33 +26,7 @@ class concr extends unicore
         session::admin_restricted();
 
         */
-        $arr = [
-          'mysql'=>true,
-            'name'=>'test',
-          'tables'=>[
-              [
-                  'name'=>'test',
-                  'primary'=>'id',
-                  'fields'=>[
-                      ['name'=>'id','type'=>'int'],
-                      ['name'=>'insert_date','type'=>'timestamp'],
-                      ['name'=>'delete_date','type'=>'datetime'],
-                  ]
-              ],[
-                  'name'=>'test_email',
-                  'primary'=>'id',
-                  'fields'=>[
-                      ['name'=>'id','type'=>'int'],
-                      ['name'=>'test_id','type'=>'int'],
-                      ['name'=>'insert_date','type'=>'timestamp'],
-                      ['name'=>'delete_date','type'=>'datetime'],
-                  ]
-              ]
 
-          ]
-        ];
-        //$this->createModel($arr);
-        //exit();
         $this->uni->include_js_vars(['structure'=>json_encode($this->getStructure()),'api_point'=>'{{base}}_neoan/apps/api.app.php']);
         $this->uni->hook('main_hook','concr');
         $this->uni->output();
@@ -62,43 +38,32 @@ class concr extends unicore
     }
 
     function getFrames(){
-        $frames = scandir(path .'/frame');
+        $frames = worker::scanner(path .'/frame');
         $return =[];
-        $version = '';
-
         foreach($frames as $frame){
-            if(file_exists(path.'/frame/'.$frame.'/version.json')){
-                $get = json_decode(file_get_contents(path.'/frame/'.$frame.'/version.json'),true);
-                if(isset($get['version'])){
-                    $version = $get['version'];
-                }
+            $version = worker::findVersion(path.'/frame/'.$frame);
+            if($version){
+                array_push($return,['name'=>$frame,'version'=>$version['version']]);
             }
-            if($frame !='.'&&$frame!='..'){
-                array_push($return,['name'=>$frame,'version'=>$version]);
-            }
+
         }
         return $return;
     }
     function getLocal(){
-        $models = scandir(path.'/model');
-        $comps = scandir(path.'/src');
+        $models = worker::scanner(path.'/model');
+        $comps = worker::scanner(path.'/src');
         $return = ['component'=>[],'directive'=>[],'frame'=>[],'service'=>[],'model'=>[],'hybrid'=>[]];
         foreach($comps as $comp){
-
-            if(file_exists(path.'/src/'.$comp.'/version.json')){
-                $get = json_decode(file_get_contents(path.'/src/'.$comp.'/version.json'),true);
-                array_push($return[$get['type']],$get);
-
+            $version = worker::findVersion(path.'/src/'.$comp);
+            if($version){
+                array_push($return[$version['type']],$version);
             }
-
         }
         foreach($models as $model){
-            if(file_exists(path.'/model/'.$model.'/version.json')){
-                $get = json_decode(file_get_contents(path.'/model/'.$model.'/version.json'),true);
-                array_push($return[$get['type']],$get);
-
+            $version = worker::findVersion(path.'/model/'.$model);
+            if($version){
+                array_push($return[$version['type']],$version);
             }
-
         }
         return $return;
     }
@@ -162,17 +127,25 @@ class concr extends unicore
             $str .= "\t\t".'if(!empty($q)){'."\n";
             $str .= "\t\t\t".'$answer = $q[0];'."\n";
             $mysql = '';
+            $mySqlFields = [];
+            $i = 0;
             foreach ($obj['tables'] as $table){
                 if($table['name'] != $obj['name']){
                     $str .= "\t\t\t" .'$answer[\''.$table['name'] . '\'] = parent::undeleted(\'user\',\''.$table['name'] . '\',$id);'."\n";
                 }
+                $mySqlFields[$i]['table_name'] = $table['name'];
+                $mySqlFields[$i]['fields'] = [];
 
                 $mysql .= 'CREATE TABLE IF NOT EXISTS `' . $table['name'] ."` ( \n";
+
                 foreach ($table['fields'] as $field){
-                    $mysql .= '`'.$field['name'] . '` ' . $this->mySqlTypes($field['type']) . ($field['name']==$table['primary']?'NOT NULL AUTO_INCREMENT':'') . ','."\n";
+                    $val = $this->mySqlTypes($field['type']) . ($field['name']==$table['primary']?'NOT NULL AUTO_INCREMENT':'');
+                    $mySqlFields[$i]['fields'][] = [$field['name']=>$val];
+                    $mysql .= '`'.$field['name'] . '` ' . $val . ','."\n";
                 }
                 $mysql .= 'PRIMARY KEY (`'.$table['primary'].'`)'."\n";
                 $mysql .= ') ENGINE=MyISAM DEFAULT CHARSET=utf8;'."\n";
+                $i++;
             }
             $mysql .= 'COMMIT;';
             $str .= "\t\t".'}'."\n";
@@ -181,8 +154,9 @@ class concr extends unicore
         $str .= "\t}\n";
         $str .= "}";
         $this->write(path.'/model/'.$obj['name'].'/'.$obj['name'].'.model.php',$str);
-        if(isset($mysql)){
+        if(isset($mysql)&&isset($mySqlFields)){
             $this->write(path.'/model/'.$obj['name'].'/install.sql',$mysql);
+            $this->write(path.'/model/'.$obj['name'].'/migrate.json',json_encode($mySqlFields));
             $this->installModel($obj);
         }
         if(isset($obj['service'])&&$obj['service']){
@@ -196,43 +170,23 @@ class concr extends unicore
         if(!$this->saveGuard($obj['name'],'service')){
             return ['error'=>'Service exists!'];
         }
-        if(!$this->versioning($path,'model',$obj['name'])){
+        if(!$this->versioning($path,'service',$obj['name'])){
             return ['error'=>'version!'];
         }
         $includes = $this->includes('$q, com');
-        $str = "/**\n* Created by UNICORE-Concr " . date('m/d/Y') . "\n*/\n";
-        $str .= "app.factory('" . $obj['name'] ."',[".$includes['parenthesis']."function(";
-        $str .= $includes['bare'];
-        $str .="){\n\treturn{\n\t\t".$obj['name']."s:[],\n";
-        $str .= "\t\tget:function(".$obj['name']."_id){\n";
-        $str .= "\t\t\t".'var self=this, exists = false;'."\n";
-        $str .= "\t\t\t".'return $q(function(resolve,reject){'."\n";
-        $str .= "\t\t\t\t".'angular.forEach(self.'.$obj['name'].'s,function(item){'."\n";
-        $str .= "\t\t\t\t\t".'if(item.id==='.$obj['name'].'_id){'."\n";
-        $str .= "\t\t\t\t\t\t".'exists = item;'."\n";
-        $str .= "\t\t\t\t\t".'}'."\n";
-        $str .= "\t\t\t\t".'});'."\n";
-        $str .= "\t\t\t\t".'if(!exists){'."\n";
-        $str .= "\t\t\t\t\tcom('".$obj['name']."::get',{id:".$obj['name']."_id})\n";
-        $str .= "\t\t\t\t\t.success(function (data) {\n";
-        $str .= "\t\t\t\t\t\tself.".$obj['name']."s.push(data);\n";
-        $str .= "\t\t\t\t\t\tresolve(data)\n";
-        $str .= "\t\t\t\t\t}).error(function (){\n";
-        $str .= "\t\t\t\t\t\treject({error:'not found'})\n";
-        $str .= "\t\t\t\t\t})\n";
-        $str .= "\t\t\t\t".'} else {'."\n";
-        $str .= "\t\t\t\t\t".'resolve(exists)'."\n";
-        $str .= "\t\t\t\t".'}'."\n";
-        $str .= "\t\t\t".'})'."\n";
-        $str .= "\t\t}\n";
-        $str .= "\t}\n";
-        $str .= "}]);";
+
+        $str = stringops::embrace(file_get_contents(__DIR__.'/_service.js'),[
+            'name'=>$obj['name'],
+            'inject_parenthesis'=>$includes['parenthesis'],
+            'inject_bare'=>$includes['bare'],
+        ]);
         $this->write($path.'/'.$obj['name'].'.service.js',$str);
         $this->serviceGetCtrl($obj['name']);
         return ['error'=>false];
     }
     function serviceGetCtrl($modelName){
         $str = "\t".'function get($obj){'."\n";
+        $str .= "\t\t".'session::api_restricted();'."\n";
         $str .= "\t\t".'load::model(\''.$modelName.'\');'."\n";
         $str .= "\t\t".'return '.$modelName.'_model::data($obj[\'id\']);'."\n";
         $str .= "\t".'}'."\n";
@@ -291,7 +245,7 @@ class concr extends unicore
         //write css
         $this->write(path.'/frame/'.$obj['name'].'/'.$obj['name'].'.css','.main{}');
         // js
-        $this->ngCtrl($obj['name'],['$scope','$rootScope'],'frame');
+        $this->ngCtrl($obj['name'],'$scope,$rootScope','frame');
         //constants
         $this->constants($obj,$frame['hooks']);
         //config
@@ -305,11 +259,20 @@ class concr extends unicore
     }
     function createElement($obj){
         $path = path.'/src/'.$obj['name'];
-
+        $skipCreation = false;
         if(file_exists($path.'/'.$obj['name'].'.ctrl.php')){
-            return ['error'=>'Component exists!'];
+            require_once($path.'/'.$obj['name'].'.ctrl.php');
+            if(method_exists($obj['name'],'init')){
+                return ['error'=>'Component exists!'];
+            } else {
+                $skipCreation = true;
+            }
+
         }
-        $this->mkDir('/src/'.$obj['name']);
+        if(!$skipCreation){
+            $this->mkDir('/src/'.$obj['name']);
+        }
+
         if(!$this->versioning($path,'component',$obj['name'])){
             return ['error'=>'version!'];
         }
@@ -324,13 +287,13 @@ class concr extends unicore
         if(isset($obj['view'])&&$obj['view']){
             $this->view($obj['name'],(isset($obj['ctrl'])&&$obj['ctrl']?true:false));
         }
-        $this->ctrl($obj,$ownService);
+        $this->ctrl($obj,$ownService,$skipCreation);
         return ['error'=>false,'location'=>'../'.$obj['name'].'/'];
     }
     private function translate($name){
         $str = "<?php\n/**\n* Created by UNICORE-Concr " . date('m/d/Y') . "\n* \n*/\n";
         $str .= "class frame_translate{\n";
-        $str .= "\tfunction translate(){\n\t\treturn ['en-US'=>['new Component'=>'new localized component'],'de-DE'=>['new Component'=>'Neues Modul'];\n\t}\n";
+        $str .= "\tfunction translate(){\n\t\treturn ['en-US'=>['new Component'=>'new localized component'],'de-DE'=>['new Component'=>'Neues Modul']];\n\t}\n";
         $str .= "\tfunction single(".'$key,$lang'."){\n\t\t".'return $this->translate()[$lang][$key]'.";\n\t}\n";
         $str .= "}";
         $this->write(path.'/frame/'.$name.'/translate.php',$str);
@@ -453,13 +416,16 @@ class concr extends unicore
         $str .= "\n\t".'{{variable}}'."\n</div>";
         $this->write(path.'/src/'.$name.'/'.$name.'.view.html',$str);
     }
-    private function ctrl($data,$serviceIncludes=false){
+    private function ctrl($data,$serviceIncludes=false,$skipCreation = false){
         $t ='';
         if(file_exists(path.'/frame/'.$data['frame'].'/translate.php')){
             $t = "'translate'";
         }
-        $str = "<?php\n/**\n* Created by UNICORE-Concr " . date('m/d/Y') . "\n* @property layout uni\n*/\n";
-        $str .= "class " . $data['name'] ." extends unicore{\n";
+        if(!$skipCreation){
+            $str = "<?php\n/**\n* Created by UNICORE-Concr " . date('m/d/Y') . "\n* @property layout uni\n*/\n";
+            $str .= "class " . $data['name'] ." extends unicore{\n";
+        }
+
         $str .= "\tfunction init(){\n\t\t" .'parent::uni(\''.$data['frame'] ."');\n";
         if(isset($data['view'])&&$data['view']){
             $newC = "'new Component'";
@@ -485,8 +451,13 @@ class concr extends unicore
 
         $str .= "\t\t" .'$this->uni->output(' . $t .');' ."\n";
         $str .= "\t}\n";
+        if(!$skipCreation){
+            $str .= "\n}";
+        } else {
+            $old = file_get_contents(path.'/src/'.$data['name'].'/'.$data['name'].'.ctrl.php');
+            $str = substr($old,0,-1).$str ."\n}";
+        }
 
-        $str .= "\n}";
 
         $this->write(path.'/src/'.$data['name'].'/'.$data['name'].'.ctrl.php',$str);
     }
