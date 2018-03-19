@@ -56,7 +56,7 @@ class t {
 	        $get = new frame_translate;
             return $get->translate();
         }
-        return [];
+        return array();
     }
     static function single($frame,$key,$lang){
         // first check for settings
@@ -81,7 +81,7 @@ class t {
 	        $language = substr($_SERVER['HTTP_ACCEPT_LANGUAGE'],0,2);
         }
 	    $loadedStack = (isset($stack[$language])?$stack[$language]:$stack['else']);
-	    $return = [];
+	    $return = array();
 	    $i=0;
 	    foreach ($array as $item){
 	        $return[$i] = $item;
