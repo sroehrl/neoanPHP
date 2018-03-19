@@ -15,13 +15,14 @@ class zip {
 				}
 			}
 		}
-		if(count($valid_files)) {
+		if(!empty($valid_files)) {
 			$zip = new ZipArchive();
 			if($zip->open($destination,$overwrite ? ZIPARCHIVE::OVERWRITE : ZIPARCHIVE::CREATE) !== true) {
 				return false;
 			}
 			foreach($valid_files as $file) {
-				$zip->addFile($file,$file);
+			    $filename = explode('/',$file);
+				$zip->addFile($file,end($filename));
 			}
 			$zip->close();
 			return file_exists($destination);

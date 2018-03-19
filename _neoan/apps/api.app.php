@@ -1,5 +1,5 @@
 <?php
-
+ini_set('error_reporting',E_ALL ^E_NOTICE);
 if(!defined('path')) {
     define('path', dirname(dirname(dirname(__FILE__))));
     define('neoan_path', dirname(dirname(__FILE__)));
@@ -51,14 +51,14 @@ if (isset($_SERVER['REQUEST_METHOD']) && $_SERVER['REQUEST_METHOD'] == 'OPTIONS'
     $c = new $class(false);
 
     $function = $post['f'];
-    $obj = (isset($post['d'])?$post['d']:[]);
+    $obj = (isset($post['d'])?$post['d']:array());
     header('Content-type: application/json');
     if(!empty($obj)){
         echo json_encode($c->$function($obj));
     } else {
         echo json_encode($c->$function());
     }
-    api::flush();
+    //api::flush();
     die();
 }
 class api {
@@ -72,7 +72,7 @@ class api {
     }
     static function clean($obj){
         if(is_array($obj)){
-            $return = [];
+            $return = array();
             foreach($obj as $key => $val){
                 $return[$key] = addslashes(trim($val));
             }

@@ -20,7 +20,7 @@ class db
 			}
 		}
 	}
-	public static function easy($selectorString,$conditionArray=[],$callFunctions=[],$output='data'){
+	public static function easy($selectorString,$conditionArray=array(),$callFunctions=array(),$output='data'){
         $qStr = 'SELECT ';
         $i = 0;
         $selects = explode(' ',$selectorString);
@@ -30,7 +30,7 @@ class db
         }
         $qStr .= ' FROM ';
         $remember = false;
-        $joined = [];
+        $joined = array();
         foreach ($selects as $what){
             $table = explode('.',trim($what));
             $table = preg_replace('/[^a-zA-Z_]/','',$table[0]);
@@ -62,7 +62,8 @@ class db
         if($output=='debug'){
             $output='callData';
         }
-        return self::data($qStr)[$output];
+        $data = self::data($qStr);
+        return $data[$output];
     }
 
 	public static function data($sql, $type = 'query') {
@@ -71,7 +72,7 @@ class db
             die();
         }
 		$data = self::query($sql);
-		$return = ['callData' => ['sql' => $sql], 'data' => []];
+		$return = array('callData' => array('sql' => $sql), 'data' => array());
 		if($type == 'query' && is_object($data['result']) && $data['result']->num_rows > 0) {
 			while($row = mysqli_fetch_assoc($data['result'])) {
 				$return['data'][] = $row;
@@ -146,11 +147,12 @@ class db
 			}
 		}
 		$whereString .= $additional;
-		$array = ['table' => $table, 'fields_block' => $fieldsString, 'where_block' => $whereString];
+		$array = array('table' => $table, 'fields_block' => $fieldsString, 'where_block' => $whereString);
 
 		$sql = file_get_contents(neoan_path . '/apps/query/_query.sql');
 		$processed = str_replace(array_map('self::curlyBraces', array_keys($array)), array_values($array), $sql);
-		return self::data($processed, 'query')['data'];
+		$data = self::data($processed, 'query');
+		return $data['data'];
 	}
 
 	private static function smartUpdate($table, $fields, $where) {
@@ -167,11 +169,12 @@ class db
 			$whereString .= ($i > 0 ? "\n  AND " : '') . $key . $val;
 			$i++;
 		}
-		$array = ['table' => $table, 'fields_block' => $fieldsString, 'where_block' => $whereString];
+		$array = array('table' => $table, 'fields_block' => $fieldsString, 'where_block' => $whereString);
 
 		$sql = file_get_contents(neoan_path . '/apps/query/_update.sql');
 		$processed = str_replace(array_map('self::curlyBraces', array_keys($array)), array_values($array), $sql);
-		return (int) self::data($processed, 'update')['callData']['rows'];
+		$data = self::data($processed, 'update');
+		return (int) $data['callData']['rows'];
 	}
 
 	private static function smartInsert($table, $fields) {
@@ -181,7 +184,7 @@ class db
 			$fieldsString .= ($i > 0 ? ",\n  " : '') . $key . self::operandi($val, true);
 			$i++;
 		}
-		$array = ['table' => $table, 'fields_block' => $fieldsString];
+		$array = array('table' => $table, 'fields_block' => $fieldsString);
 		$sql = file_get_contents(neoan_path . '/apps/query/_insert.sql');
 		$processed = str_replace(array_map('self::curlyBraces', array_keys($array)), array_values($array), $sql);
 		$data = self::data($processed, 'insert');

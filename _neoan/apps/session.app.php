@@ -8,10 +8,10 @@ class session {
     }
     static function api_restricted($role=false){
         if (!isset($_SESSION['logged_id'])){
-            echo json_encode(['error'=>'login']);
+            echo json_encode(array('error'=>'login'));
             die();
         } elseif($role&&self::roleCheck($role)){
-            echo json_encode(['error'=>'permission denied']);
+            echo json_encode(array('error'=>'permission denied'));
             die();
         }
         $_SESSION['idle'] = 0;
@@ -19,12 +19,12 @@ class session {
     }
     static function api_admin_restricted($label_id){
         if (!isset($_SESSION['logged_id'])){
-            echo json_encode(['error'=>'login']);
+            echo json_encode(array('error'=>'login'));
             die();
         }
-        $adm = db::ask('?user',['id'],['id'=>$_SESSION['logged_id'], 'user_type'=>'admin', 'label_id'=>$label_id, 'delete_date'=>'']);
+        $adm = db::ask('?user',array('id'),array('id'=>$_SESSION['logged_id'], 'user_type'=>'admin', 'label_id'=>$label_id, 'delete_date'=>''));
         if(empty($adm)){
-            echo json_encode(['error'=>'permission']);
+            echo json_encode(array('error'=>'permission'));
             die();
         }
     }
@@ -33,7 +33,7 @@ class session {
             redirect(default_ctrl);
             exit();
         }
-        $adm = db::ask('?user',['id'],['id'=>$_SESSION['logged_id'], 'user_type'=>'admin', 'delete_date'=>'']);
+        $adm = db::ask('?user',array('id'),array('id'=>$_SESSION['logged_id'], 'user_type'=>'admin', 'delete_date'=>''));
         if(empty($adm)){
             redirect(default_ctrl);
             exit();

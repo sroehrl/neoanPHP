@@ -75,8 +75,15 @@ class stringops{
 
         return $plaintext;
     }
+    static function base64url_to_base64($input=""){
+        $padding = strlen($input) % 4;
+        if ($padding > 0) {
+            $input .= str_repeat("=", 4 - $padding);
+        }
+        return strtr($input, '-_', '+/');
+    }
     static function extrude($array,$objArray){
-        $return = [];
+        $return = array();
         foreach ($array as $key){
             if(isset($objArray[$key])){
                 $return[$key] = $objArray[$key];
