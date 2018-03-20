@@ -33,7 +33,7 @@ class concr extends unicore
 
     }
     private function getStructure(){
-        require_once(path.'/src/concr/frames.php');
+        require_once(path.'/src/concr/_frames.php');
         return $frames;
     }
 
@@ -113,7 +113,7 @@ class concr extends unicore
     function createModel($obj){
         $path = path.'/model/'.$obj['name'];
         if(!$this->saveGuard($obj['name'],'model','model')){
-            return ['error'=>'Service exists!'];
+            return ['error'=>'Model exists!'];
         }
         if(!$this->versioning($path,'model',$obj['name'])){
             return ['error'=>'version!'];
@@ -123,13 +123,14 @@ class concr extends unicore
         $str .= "\t".'static function data($id){'."\n";
         if($obj['mysql']){
             $str .= "\t\t".'$answer = false;'."\n";
-            $str .= "\t\t".'$q = db::easy(\''.$obj['name'].'*\',[\'id\'=>$id]);'."\n";
+            $str .= "\t\t".'$q = db::easy(\''.$obj['name'].'.*\',[\'id\'=>$id]);'."\n";
             $str .= "\t\t".'if(!empty($q)){'."\n";
             $str .= "\t\t\t".'$answer = $q[0];'."\n";
             $this->writeInstallMigration($obj['tables'],$obj['name']);
             foreach ($obj['tables'] as $table){
                 if($table['table_name'] != $obj['name']){
-                    $str .= "\t\t\t" .'$answer[\''.$table['table_name'] . '\'] = parent::undeleted(\'user\',\''.$table['table_name'] . '\',$id);'."\n";
+                    $split = explode('_',$table['table_name']);
+                    $str .= "\t\t\t" .'$answer[\''.$table['table_name'] . '\'] = parent::undeleted(\''.$split[0].'\',\''.substr($table['table_name'],strlen($split[0])+1) . '\',$id);'."\n";
                 }
             }
 
@@ -140,6 +141,8 @@ class concr extends unicore
         $str .= "}";
         $this->write(path.'/model/'.$obj['name'].'/'.$obj['name'].'.model.php',$str);
         if($obj['mysql']){
+            // load db
+            include_once(path.'/frame/'.$obj['dbFrame'].'/config.php');
             $this->installModel($obj);
         }
         if(isset($obj['service'])&&$obj['service']){
@@ -162,7 +165,7 @@ class concr extends unicore
             foreach ($table['fields'] as $field){
                 $val = $this->mySqlTypes($field['dataType']) . ($field['name']==$table['primary']?'NOT NULL AUTO_INCREMENT':'');
                 $is_null = false;
-                if($field['name']!=$table['primary']&&($field['dataType']=='datetime'||$field['dataType']=='int')){
+                if(($field['name']!=$table['primary']&&$field['name']!='id')&&($field['dataType']=='datetime'||$field['dataType']=='int')){
                     $is_null = true;
                 }
                 $mySqlFields[$i]['fields'][] = [
@@ -557,11 +560,56 @@ class concr extends unicore
         return $return;
     }
     function pull($obj){
-        session::api_restricted();
         // does exist locally?
+        $type = $obj['folder']['type'];
+        $localPath = path;
+        switch($type){
+            case 'component':
+                $localPath .= '/src/'.$obj['folder']['name'];
+                $exists = file_exists($localPath.'/version.json');
+                break;
+            default:
+                $localPath .= '/'.$type.'/'.$obj['folder']['name'];
+                $exists = file_exists($localPath.'/version.json');
+        }
         // compare versions
+        if($exists){
+            $installed = json_decode(file_get_contents($localPath.'/version.json'),true);
+            $localVersion = explode('.',$installed['version']);
+            $remoteVersion = explode('.',$obj['folder']['version']);
+            $proceed = true;
+            $higher = false;
+            foreach ($localVersion as $i =>$num){
+
+                if(intval($num)>intval($remoteVersion[$i])){
+                    $proceed = false;
+                } elseif(!$higher){
+                    $higher = true;
+                }
+            }
+            if(!$proceed&&$higher){
+                return ['error'=>'Local version is greater!!'];
+            }
+        }
         // copy
 
+        worker::recursiveCopy(dirname(path).$obj['remote'].'/'.$obj['folder']['name'],$localPath);
+        return ['error'=>false];
+
+    }
+    function loadModelData($obj){
+        include_once(path.'/frame/'.$obj['frame'].'/config.php');
+
+        $class = $obj['name'].'_model';
+        load::model($obj['name']);
+        $answer = [];
+        for($i=1;$i<11;$i++){
+            $try = $class::data($i);
+            if(!empty($try)){
+                $answer[] = $try;
+            }
+        }
+        return $answer;
     }
     function loadModel($obj){
         // load migration
@@ -587,6 +635,7 @@ class concr extends unicore
             }
             $migration[$i]['db'] =$cp;
         }
+
         return $migration;
 
     }

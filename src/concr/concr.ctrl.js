@@ -138,7 +138,12 @@ app.controller('concrCtrl',['$scope','api','$localStorage','com',function($scope
         },
         pull:function(folder){
             com('concr::pull',{remote:this.remotePath,folder:folder}).success(function(data){
-                console.log(data);
+                if(data.error){
+                    alert(data.error);
+                } else {
+                    $scope.getAll();
+                    $scope.getFrames();
+                }
             });
         }
     };
@@ -150,6 +155,15 @@ app.controller('concrCtrl',['$scope','api','$localStorage','com',function($scope
     });
     $scope.model = {
         frame:'',
+        data:{},
+        getData:function(){
+            com('concr::loadModelData',{frame:this.frame,name:$scope.currentModelName}).success(function(data){
+                $scope.model.data = data;
+                if(data.length<1){
+                    alert('empty');
+                }
+            })
+        },
         load:function(name){
             com('concr::loadModel',{name:name,frame:this.frame}).success(function(data){
                 $scope.currentModel = data;

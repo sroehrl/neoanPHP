@@ -28,9 +28,10 @@
         </md-sidenav>
         <div flex layout-padding>
             <div ng-if="working">Working...</div>
+            <!-- merge -->
             <div ng-if="!state">
                 <h2>Welcome to concr</h2>
-                <p>Merge responsibly</p>
+                <p>SECURITY warning: Do not include concr in your production!</p>
 
                 <div layout="row">
                     <md-content flex="35">
@@ -184,7 +185,14 @@
                 <md-checkbox ng-model="specs.mysql" aria-label="mysql?">
                     Uses MYSQL-database
                 </md-checkbox>
+
                 <div ng-if="specs.mysql">
+                    <md-input-container>
+                        <label>Context</label>
+                        <md-select ng-model="specs.dbFrame" required ng-init="specs.dbFrame = frames[0].name">
+                            <md-option ng-repeat="frame in frames" value="{{frame.name}}">{{frame.name}}</md-option>
+                        </md-select>
+                    </md-input-container>
                     <div ng-repeat="table in specs.tables">
                         <md-input-container>
                             <label>Table-Name</label>
@@ -366,75 +374,94 @@
                 <hr>
                 <h3 ng-if="currentModel.error">This model does not seem to have a db-structure.</h3>
                 <div ng-if="currentModel&&!currentModel.error">
-                    <div  ng-repeat="table in currentModel">
-                        <h4>Table: {{table.table_name}}</h4>
-                        <div layout="row" style="margin-bottom:4px">
-                            <div flex="33">Property</div>
-                            <div flex="33">Model</div>
-                            <div flex="33">Database</div>
-                        </div>
-                        <div layout="row" ng-repeat="(key,compare) in table.compared">
+                    <md-tabs md-dynamic-height>
+                        <md-tab label="structure">
+                            <md-content>
+                                <div  ng-repeat="table in currentModel">
+                                    <h4>Table: {{table.table_name}}</h4>
+                                    <div layout="row" style="margin-bottom:4px">
+                                        <div flex="33">Property</div>
+                                        <div flex="33">Model</div>
+                                        <div flex="33">Database</div>
+                                    </div>
+                                    <div layout="row" ng-repeat="(key,compare) in table.compared">
 
-                            <div flex="33">
-                                <i class="fa fa-times pointer" style="color:red" ng-click="model.delete($parent.$index,key)"></i>
-                                <strong>{{key}}</strong>
+                                        <div flex="33">
+                                            <i class="fa fa-times pointer" style="color:red" ng-click="model.delete($parent.$index,key)"></i>
+                                            <strong>{{key}}</strong>
 
-                            </div>
-                            <div flex="33">
+                                        </div>
+                                        <div flex="33">
 
-                                <span ng-if="!compare.mod.dataType" style="color:red">DOES NOT EXIST</span>
-                                <span ng-if="compare.mod.dataType&&compare.mod.dataType==compare.db.dataType">
+                                            <span ng-if="!compare.mod.dataType" style="color:red">DOES NOT EXIST</span>
+                                            <span ng-if="compare.mod.dataType&&compare.mod.dataType==compare.db.dataType">
                                     {{compare.mod.dataType}}
                                 </span>
-                                <span ng-if="compare.mod.dataType&&compare.mod.dataType!==compare.db.dataType" style="color:red">
+                                            <span ng-if="compare.mod.dataType&&compare.mod.dataType!==compare.db.dataType" style="color:red">
                                     {{compare.mod.dataType}}
                                 </span>
-                                <span ng-if="compare.mod.dataType&&compare.mod.nullable!==compare.db.nullable" style="color:red">
+                                            <span ng-if="compare.mod.dataType&&compare.mod.nullable!==compare.db.nullable" style="color:red">
                                     NULL:{{compare.mod.nullable}}
                                 </span>
-                                <span ng-if="compare.mod.dataType&&compare.mod.default!==compare.db.default" style="color:red">
+                                            <span ng-if="compare.mod.dataType&&compare.mod.default!==compare.db.default" style="color:red">
                                     Default: {{compare.mod.default}}
                                 </span>
-                            </div>
-                            <div flex="33">
-                                {{compare.db.dataType}}
-                                <span ng-if="!compare.db.dataType" style="color:red">DOES NOT EXIST</span>
-                            </div>
-                        </div>
-                        <form ng-if="table.showAdd" ng-submit="model.add($index,newField)" layout="column" >
-                            <div>
-                                <md-input-container>
-                                    <label>name</label>
-                                    <input type="text" ng-model="newField.name">
-                                </md-input-container>
-                            </div>
-                            <div>
-                                <md-input-container>
-                                    <label>Type</label>
-                                    <md-select ng-model="newField.dataType">
-                                        <md-option value="int">Int</md-option>
-                                        <md-option value="varchar">varchar</md-option>
-                                        <md-option value="timestamp">current timestamp</md-option>
-                                        <md-option value="datetime">datetime</md-option>
-                                    </md-select>
-                                </md-input-container>
-                            </div>
+                                        </div>
+                                        <div flex="33">
+                                            {{compare.db.dataType}}
+                                            <span ng-if="!compare.db.dataType" style="color:red">DOES NOT EXIST</span>
+                                        </div>
+                                    </div>
+                                    <form ng-if="table.showAdd" ng-submit="model.add($index,newField)" layout="column" >
+                                        <div>
+                                            <md-input-container>
+                                                <label>name</label>
+                                                <input type="text" ng-model="newField.name">
+                                            </md-input-container>
+                                        </div>
+                                        <div>
+                                            <md-input-container>
+                                                <label>Type</label>
+                                                <md-select ng-model="newField.dataType">
+                                                    <md-option value="int">Int</md-option>
+                                                    <md-option value="varchar">varchar</md-option>
+                                                    <md-option value="timestamp">current timestamp</md-option>
+                                                    <md-option value="datetime">datetime</md-option>
+                                                </md-select>
+                                            </md-input-container>
+                                        </div>
 
-                            <div flex="50">
-                                <md-button type="submit">add field</md-button>
-                            </div>
-                        </form>
-                        <div layout="row">
-                            <div flex="33"><md-button class="md-fab md-mini" ng-click="table.showAdd=!table.showAdd"><i class="fa fa-plus"></i></md-button></div>
-                            <div flex="33"><md-button class="md-raised md-accent" ng-click="model.migrate($index)">Migrate to DB -></md-button></div>
-                        </div>
+                                        <div flex="50">
+                                            <md-button type="submit">add field</md-button>
+                                        </div>
+                                    </form>
+                                    <div layout="row">
+                                        <div flex="33"><md-button class="md-fab md-mini" ng-click="table.showAdd=!table.showAdd"><i class="fa fa-plus"></i></md-button></div>
+                                        <div flex="33"><md-button class="md-raised md-accent" ng-click="model.migrate($index)">Migrate to DB -></md-button></div>
+                                    </div>
 
-                    </div>
+                                </div>
+                            </md-content>
+                        </md-tab>
+                        <md-tab label="enties">
+                            <md-content>
+                                <h3>This view is limited to 10 entries. Consider phpmyadmin.</h3>
+                                <md-button class="md-raised md-primary" ng-click="model.getData()">Try loading</md-button>
+                                <div>
+                                    <code >{{model.data}}</code>
+                                </div>
+                                <form  ng-repeat="table in currentModel">
+
+                                </form>
+                            </md-content>
+                        </md-tab>
+                    </md-tabs>
+
 
                 </div>
             </div>
 
         </md-content>
     </div>
-
+    </div>
 </div>

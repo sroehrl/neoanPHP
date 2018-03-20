@@ -22,4 +22,22 @@ class worker {
         return false;
     }
 
+    static function recursiveCopy($source,$destination){
+
+        $dir = scandir($source);
+
+        @mkdir($destination);
+        foreach($dir as $file ) {
+
+            if (( $file != '.' ) && ( $file != '..' )) {
+                if ( is_dir($source . DIRECTORY_SEPARATOR . $file) ) {
+                    self::recursiveCopy($source . DIRECTORY_SEPARATOR . $file,$destination . DIRECTORY_SEPARATOR . $file);
+                }
+                else {
+                    copy($source . DIRECTORY_SEPARATOR . $file,$destination . DIRECTORY_SEPARATOR .$file);
+                }
+            }
+        }
+    }
+
 }
