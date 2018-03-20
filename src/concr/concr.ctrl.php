@@ -126,43 +126,60 @@ class concr extends unicore
             $str .= "\t\t".'$q = db::easy(\''.$obj['name'].'*\',[\'id\'=>$id]);'."\n";
             $str .= "\t\t".'if(!empty($q)){'."\n";
             $str .= "\t\t\t".'$answer = $q[0];'."\n";
-            $mysql = '';
-            $mySqlFields = [];
-            $i = 0;
+            $this->writeInstallMigration($obj['tables'],$obj['name']);
             foreach ($obj['tables'] as $table){
-                if($table['name'] != $obj['name']){
-                    $str .= "\t\t\t" .'$answer[\''.$table['name'] . '\'] = parent::undeleted(\'user\',\''.$table['name'] . '\',$id);'."\n";
+                if($table['table_name'] != $obj['name']){
+                    $str .= "\t\t\t" .'$answer[\''.$table['table_name'] . '\'] = parent::undeleted(\'user\',\''.$table['table_name'] . '\',$id);'."\n";
                 }
-                $mySqlFields[$i]['table_name'] = $table['name'];
-                $mySqlFields[$i]['fields'] = [];
-
-                $mysql .= 'CREATE TABLE IF NOT EXISTS `' . $table['name'] ."` ( \n";
-
-                foreach ($table['fields'] as $field){
-                    $val = $this->mySqlTypes($field['type']) . ($field['name']==$table['primary']?'NOT NULL AUTO_INCREMENT':'');
-                    $mySqlFields[$i]['fields'][] = [$field['name']=>$val];
-                    $mysql .= '`'.$field['name'] . '` ' . $val . ','."\n";
-                }
-                $mysql .= 'PRIMARY KEY (`'.$table['primary'].'`)'."\n";
-                $mysql .= ') ENGINE=MyISAM DEFAULT CHARSET=utf8;'."\n";
-                $i++;
             }
-            $mysql .= 'COMMIT;';
+
             $str .= "\t\t".'}'."\n";
         }
         $str .= "\t\t".'return $answer;'."\n";
         $str .= "\t}\n";
         $str .= "}";
         $this->write(path.'/model/'.$obj['name'].'/'.$obj['name'].'.model.php',$str);
-        if(isset($mysql)&&isset($mySqlFields)){
-            $this->write(path.'/model/'.$obj['name'].'/install.sql',$mysql);
-            $this->write(path.'/model/'.$obj['name'].'/migrate.json',json_encode($mySqlFields));
+        if($obj['mysql']){
             $this->installModel($obj);
         }
         if(isset($obj['service'])&&$obj['service']){
             $this->createService($obj);
         }
         return ['error'=>false];
+
+    }
+    private function writeInstallMigration($tables,$modelName){
+        $mysql = '';
+        $mySqlFields = [];
+        $i = 0;
+        foreach ($tables as $table){
+
+            $mySqlFields[$i]['table_name'] = $table['table_name'];
+            $mySqlFields[$i]['fields'] = [];
+
+            $mysql .= 'CREATE TABLE IF NOT EXISTS `' . $table['table_name'] ."` ( \n";
+
+            foreach ($table['fields'] as $field){
+                $val = $this->mySqlTypes($field['dataType']) . ($field['name']==$table['primary']?'NOT NULL AUTO_INCREMENT':'');
+                $is_null = false;
+                if($field['name']!=$table['primary']&&($field['dataType']=='datetime'||$field['dataType']=='int')){
+                    $is_null = true;
+                }
+                $mySqlFields[$i]['fields'][] = [
+                    'name'=>$field['name'],
+                    'dataType'=>$field['dataType'],
+                    'nullable'=>$is_null,
+                    'default'=>($field['dataType']=='timestamp'?'CURRENT_TIMESTAMP':null)
+                ];
+                $mysql .= '`'.$field['name'] . '` ' . $val . ','."\n";
+            }
+            $mysql .= 'PRIMARY KEY (`'.$table['primary'].'`)'."\n";
+            $mysql .= ') ENGINE=MyISAM DEFAULT CHARSET=utf8;'."\n";
+            $i++;
+        }
+        $mysql .= 'COMMIT;';
+        $this->write(path.'/model/'.$modelName.'/install.sql',$mysql);
+        $this->write(path.'/model/'.$modelName.'/migrate.json',json_encode($mySqlFields));
 
     }
     function createService($obj){
@@ -289,6 +306,31 @@ class concr extends unicore
         }
         $this->ctrl($obj,$ownService,$skipCreation);
         return ['error'=>false,'location'=>'../'.$obj['name'].'/'];
+    }
+    function saveMigration($obj){
+        $migrate = $obj['model'];
+        foreach ($migrate as $key =>$value){
+            unset($migrate[$key]['db']);
+            unset($migrate[$key]['compared']);
+            unset($migrate[$key]['showAdd']);
+
+        }
+        $this->writeInstallMigration($migrate,$obj['name']);
+
+    }
+    function migrate($obj){
+        include_once(path.'/frame/'.$obj['frame'].'/config.php');
+        $q = '';
+        foreach($obj['migrate']['add'] as $add){
+            $q.='ALTER TABLE `'.$obj['table'].'` ADD `'.$add['name'].'`'.$this->mySqlTypes($add['dataType']).';' . "\n";
+        }
+        foreach($obj['migrate']['alter'] as $add){
+            $q.='ALTER TABLE `'.$obj['table'].'` MODIFY `'.$add['name'].'`'.$this->mySqlTypes($add['dataType']).';'. "\n";
+        }
+        foreach($obj['migrate']['drop'] as $add){
+            $q.='ALTER TABLE `'.$obj['table'].'` DROP COLUMN `'.$add.'`;'. "\n";
+        }
+        db::multi_query($q.' COMMIT;');
     }
     private function translate($name){
         $str = "<?php\n/**\n* Created by UNICORE-Concr " . date('m/d/Y') . "\n* \n*/\n";
@@ -519,6 +561,33 @@ class concr extends unicore
         // does exist locally?
         // compare versions
         // copy
+
+    }
+    function loadModel($obj){
+        // load migration
+        if(!file_exists(path.'/model/'.$obj['name'].'/migrate.json')){
+            return ['error'=>true];
+        }
+        $migration = json_decode(file_get_contents(path.'/model/'.$obj['name'].'/migrate.json'),true);
+        // load frame-db
+        include_once(path.'/frame/'.$obj['frame'].'/config.php');
+        foreach ($migration as $i=>$table){
+            $cp = [];
+            $db = db::data('SELECT COLUMN_NAME, DATA_TYPE, IS_NULLABLE, COLUMN_DEFAULT 
+              FROM INFORMATION_SCHEMA.COLUMNS WHERE table_name = "'.$table['table_name'].'" AND table_schema = "'.db_name.'"')['data'];
+            if(!empty($db)){
+                foreach ($db as $is){
+                    $cp[] = [
+                        'name'=>$is['COLUMN_NAME'],
+                        'dataType'=>$is['DATA_TYPE'],
+                        'nullable'=>($is['IS_NULLABLE']=='NO'?false:true),
+                        'default'=>$is['COLUMN_DEFAULT']
+                    ];
+                }
+            }
+            $migration[$i]['db'] =$cp;
+        }
+        return $migration;
 
     }
     private function version($name,$type){
