@@ -239,7 +239,7 @@
             <td>String-content, array(assoc)</td>
             <td>embraces double-curlies and substitudes with array-values</td>
             <td>
-                <code>
+                <code ng-non-bindable>
                     $str = 'this is a {{variable}} string';<br>
                     $arguments = ['variable'=>'boring']; <br>
                     echo stringops::embrace($str,$arguments);
