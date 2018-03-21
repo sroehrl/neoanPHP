@@ -453,20 +453,24 @@ class concr extends unicore
         $this->write(path.'/frame/'.$array['name'].'/'.$array['name'].'.php', $str);
 
     }
-    private function prep_array($array){
-        $return = "[";
+    private function prep_array($array,$indent="\t"){
+        $oldIndent = $indent;
+        $return = "[\n".$oldIndent;
         $i = 0;
         foreach ($array as $key => $value){
-            $return .= ($i>0?',':''). (!is_int($key)?"'" . $key . "'=>":'');
+            $return .= ($i>0?','."\n".$oldIndent:''). (!is_int($key)?"'" . $key . "'=>":'');
             if(is_array($value)){
-                $return .= $this->prep_array($value);
+                if(count($value)>1){
+                    $indent.="\t";
+                }
+                $return .= $this->prep_array($value,$indent);
             } else {
                 $return .= ($key!=='modules'? "'":'') . $value .($key!=='modules'? "'":'');
             }
             $i++;
 
         }
-        $return .= "]";
+        $return .= "\n".$oldIndent."]";
         return $return;
     }
     private function view($name, $hasController=false){
