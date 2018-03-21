@@ -143,8 +143,7 @@ class concr extends unicore
         $str .= "}";
         $this->write(path.'/model/'.$obj['name'].'/'.$obj['name'].'.model.php',$str);
         if($obj['mysql']){
-            // load db
-            include_once(path.'/frame/'.$obj['dbFrame'].'/config.php');
+
             $this->installModel($obj);
         }
         if(isset($obj['service'])&&$obj['service']){
@@ -169,7 +168,7 @@ class concr extends unicore
             foreach ($table['fields'] as $field){
                 $val = $this->mySqlTypes($field['dataType']) . ($field['name']==$table['primary']?'NOT NULL AUTO_INCREMENT':'');
                 $is_null = false;
-                if(($field['name']!=$table['primary']&&$field['name']!='id')&&($field['dataType']=='datetime'||$field['dataType']=='int')){
+                if(($field['name']!=$table['primary']&&$field['name']!='id')&&($field['dataType']=='datetime'||$field['dataType']=='int'||$field['dataType']=='varchar')){
                     $is_null = true;
                 }
                 $mySqlFields[$i]['fields'][] = [
@@ -619,7 +618,6 @@ class concr extends unicore
 
     }
     function loadModelData($obj){
-        include_once(path.'/frame/'.$obj['frame'].'/config.php');
 
         $class = $obj['name'].'_model';
         load::model($obj['name']);
@@ -638,8 +636,9 @@ class concr extends unicore
             return ['error'=>true];
         }
         $migration = json_decode(file_get_contents(path.'/model/'.$obj['name'].'/migrate.json'),true);
-        // load frame-db
-        include_once(path.'/frame/'.$obj['frame'].'/config.php');
+
+
+
         foreach ($migration as $i=>$table){
             $cp = [];
             $db = db::data('SELECT COLUMN_NAME, DATA_TYPE, IS_NULLABLE, COLUMN_DEFAULT 

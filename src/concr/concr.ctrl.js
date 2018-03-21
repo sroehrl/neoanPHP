@@ -1,7 +1,7 @@
 /**
  * Created by neoan on 7/27/2016.
  */
-app.controller('concrCtrl',['$scope','api','$localStorage','com',function($scope,api,$localStorage,com){
+app.controller('concrCtrl',['$scope','api','$localStorage','com','$http',function($scope,api,$localStorage,com,$http){
 
     console.log('loaded');
     $scope.structure = structure;
@@ -54,7 +54,7 @@ app.controller('concrCtrl',['$scope','api','$localStorage','com',function($scope
                 $scope.getAll();
             });
         } else if(what ==='model'){
-            api.call({c:'concr',f:'createModel',d:specs}).success(function(data){
+            $http.post(api.setup().api_point,{config:specs.dbFrame,c:'concr',f:'createModel',d:specs}).success(function(data){
                 if($scope.validate(data)){
                     alert('OK');
                 }
@@ -157,11 +157,13 @@ app.controller('concrCtrl',['$scope','api','$localStorage','com',function($scope
         frame:'',
         data:{},
         addEntry:{},
+        setup:api.setup(),
         isArray:function(val){
             return Array.isArray(val);
         },
         getData:function(){
-            com('concr::loadModelData',{frame:this.frame,name:$scope.currentModelName}).success(function(data){
+            var obj = {frame:this.frame,name:$scope.currentModelName};
+            $http.post(this.setup.api_point,{config:this.frame,c:'concr',f:'loadModelData',d:obj}).success(function(data){
                 $scope.model.data = data;
                 if(data.length<1){
                     alert('empty');
@@ -169,12 +171,14 @@ app.controller('concrCtrl',['$scope','api','$localStorage','com',function($scope
             })
         },
         put:function(entries){
-            com('concr::putModelData',entries).success(function(){
+            $http.post(this.setup.api_point,{config:this.frame,c:'concr',f:'putModelData',d:entries})
+            .success(function(){
                 $scope.model.addEntry = {};
             });
         },
         load:function(name){
-            com('concr::loadModel',{name:name,frame:this.frame}).success(function(data){
+            var obj = {name:name,frame:this.frame};
+            $http.post(this.setup.api_point,{config:this.frame,c:'concr',f:'loadModel',d:obj}).success(function(data){
                 $scope.currentModel = data;
                 $scope.currentModelName = name;
                 if(typeof data.error === 'undefined'){
@@ -247,7 +251,8 @@ app.controller('concrCtrl',['$scope','api','$localStorage','com',function($scope
                 }
 
             });
-            com('concr::migrate',{migrate:toMigrate,frame:$scope.model.frame,table:$scope.currentModel[ind].table_name}).success(function(){
+            var obj = {migrate:toMigrate,frame:$scope.model.frame,table:$scope.currentModel[ind].table_name};
+            $http.post(this.setup.api_point,{config:$scope.model.frame,c:'concr',f:'migrate',d:{migrate:toMigrate,frame:$scope.model.frame,table:$scope.currentModel[ind].table_name}}).success(function(){
                 $scope.model.load($scope.currentModelName);
             });
         }
