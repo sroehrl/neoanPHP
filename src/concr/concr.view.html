@@ -379,6 +379,7 @@
                             <md-content>
                                 <div  ng-repeat="table in currentModel">
                                     <h4>Table: {{table.table_name}}</h4>
+                                    <md-button class="md-raised md-primary" ng-if="installer" ng-click="model.install()">Do you want to run install on {{model.frame}}?</md-button>
                                     <div layout="row" style="margin-bottom:4px">
                                         <div flex="33">Property</div>
                                         <div flex="33">Model</div>
@@ -395,17 +396,17 @@
 
                                             <span ng-if="!compare.mod.dataType" style="color:red">DOES NOT EXIST</span>
                                             <span ng-if="compare.mod.dataType&&compare.mod.dataType==compare.db.dataType">
-                                    {{compare.mod.dataType}}
-                                </span>
-                                            <span ng-if="compare.mod.dataType&&compare.mod.dataType!==compare.db.dataType" style="color:red">
-                                    {{compare.mod.dataType}}
-                                </span>
-                                            <span ng-if="compare.mod.dataType&&compare.mod.nullable!==compare.db.nullable" style="color:red">
-                                    NULL:{{compare.mod.nullable}}
-                                </span>
-                                            <span ng-if="compare.mod.dataType&&compare.mod.default!==compare.db.default" style="color:red">
-                                    Default: {{compare.mod.default}}
-                                </span>
+                                                {{compare.mod.dataType}}
+                                            </span>
+                                                        <span ng-if="compare.mod.dataType&&compare.mod.dataType!==compare.db.dataType" style="color:red">
+                                                {{compare.mod.dataType}}
+                                            </span>
+                                                        <span ng-if="compare.mod.dataType&&compare.mod.nullable!==compare.db.nullable" style="color:red">
+                                                NULL:{{compare.mod.nullable}}
+                                            </span>
+                                                        <span ng-if="compare.mod.dataType&&compare.mod.default!==compare.db.default" style="color:red">
+                                                Default: {{compare.mod.default}}
+                                            </span>
                                         </div>
                                         <div flex="33">
                                             {{compare.db.dataType}}

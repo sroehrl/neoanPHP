@@ -74,7 +74,7 @@ class concr extends unicore
     }
 
     function installModel($obj){
-        $sql = file_get_contents(path.'/model/'.explode('_',$obj['name'])[0].'/install.sql');
+        $sql = file_get_contents(path.'/model/'.$obj['name'].'/install.sql');
         db::multi_query($sql);
         return ['done'=>true];
     }
@@ -324,8 +324,9 @@ class concr extends unicore
         $this->writeInstallMigration($migrate,$obj['name']);
 
     }
+
     function migrate($obj){
-        include_once(path.'/frame/'.$obj['frame'].'/config.php');
+
         $q = '';
         foreach($obj['migrate']['add'] as $add){
             $q.='ALTER TABLE `'.$obj['table'].'` ADD `'.$add['name'].'`'.$this->mySqlTypes($add['dataType']).';' . "\n";
@@ -614,6 +615,7 @@ class concr extends unicore
         // copy
 
         worker::recursiveCopy(dirname(path).$obj['remote'].'/'.$obj['folder']['name'],$localPath);
+
         return ['error'=>false];
 
     }

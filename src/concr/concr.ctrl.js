@@ -141,8 +141,10 @@ app.controller('concrCtrl',['$scope','api','$localStorage','com','$http',functio
                 if(data.error){
                     alert(data.error);
                 } else {
+
                     $scope.getAll();
                     $scope.getFrames();
+                    $scope.state = 'editModel';
                 }
             });
         }
@@ -170,6 +172,14 @@ app.controller('concrCtrl',['$scope','api','$localStorage','com','$http',functio
                 }
             })
         },
+        install:function(){
+            $http.post(this.setup.api_point,{config:this.frame,c:'concr',f:'installModel',d:{name:$scope.currentModelName}})
+                .success(function(){
+                    alert('MYSQL ran');
+                    $scope.model.load($scope.currentModelName);
+                });
+
+        },
         put:function(entries){
             $http.post(this.setup.api_point,{config:this.frame,c:'concr',f:'putModelData',d:entries})
             .success(function(){
@@ -185,7 +195,7 @@ app.controller('concrCtrl',['$scope','api','$localStorage','com','$http',functio
                     angular.forEach($scope.currentModel,function(table,i){
                         $scope.currentModel[i].compared = {};
                         $scope.currentModel[i].showAdd = false;
-
+                        $scope.installer = table.db.length < 1;
                         angular.forEach(table.db,function(db){
                             if(typeof $scope.currentModel[i].compared[db.name] === 'undefined'){
                                 $scope.currentModel[i].compared[db.name] = {};
@@ -251,8 +261,8 @@ app.controller('concrCtrl',['$scope','api','$localStorage','com','$http',functio
                 }
 
             });
-            var obj = {migrate:toMigrate,frame:$scope.model.frame,table:$scope.currentModel[ind].table_name};
-            $http.post(this.setup.api_point,{config:$scope.model.frame,c:'concr',f:'migrate',d:{migrate:toMigrate,frame:$scope.model.frame,table:$scope.currentModel[ind].table_name}}).success(function(){
+            var obj = {migrate:toMigrate,frame:$scope.model.frame,table:$scope.currentModel[ind].table_name,modelName:$scope.currentModelName};
+            $http.post(this.setup.api_point,{config:$scope.model.frame,c:'concr',f:'migrate',d:obj}).success(function(){
                 $scope.model.load($scope.currentModelName);
             });
         }
