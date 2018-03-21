@@ -156,6 +156,10 @@ app.controller('concrCtrl',['$scope','api','$localStorage','com',function($scope
     $scope.model = {
         frame:'',
         data:{},
+        addEntry:{},
+        isArray:function(val){
+            return Array.isArray(val);
+        },
         getData:function(){
             com('concr::loadModelData',{frame:this.frame,name:$scope.currentModelName}).success(function(data){
                 $scope.model.data = data;
@@ -163,6 +167,11 @@ app.controller('concrCtrl',['$scope','api','$localStorage','com',function($scope
                     alert('empty');
                 }
             })
+        },
+        put:function(entries){
+            com('concr::putModelData',entries).success(function(){
+                $scope.model.addEntry = {};
+            });
         },
         load:function(name){
             com('concr::loadModel',{name:name,frame:this.frame}).success(function(data){

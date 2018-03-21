@@ -2,8 +2,8 @@
  * Created by UNICORE-Concr {{date}}
  */
 
-app.service('{{name}}',{{inject_parenthesis}}function({{inject_bare}}){
-    // securing logic-existence
+app.service('{{name}}',[{{inject_parenthesis}}function({{inject_bare}}){
+    /* securing logic-existence */
     if(typeof _memory === 'undefined'){
         var _memory = {{{name}}s:{}};
     }
@@ -33,7 +33,7 @@ app.service('{{name}}',{{inject_parenthesis}}function({{inject_bare}}){
         };
     }
 
-    // {{name}} service
+    /* {{name}} service */
     return {
         call:function(fnc,obj,variable){
             return _serviceCall('{{name}}::'+fnc,obj,variable);
@@ -42,4 +42,4 @@ app.service('{{name}}',{{inject_parenthesis}}function({{inject_bare}}){
             return _serviceCall('{{name}}::get',{id:{{name}}_id},'{{name}}s');
         }
     };
-});
+}]);

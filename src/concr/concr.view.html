@@ -445,14 +445,40 @@
                         </md-tab>
                         <md-tab label="enties">
                             <md-content>
-                                <h3>This view is limited to 10 entries. Consider phpmyadmin.</h3>
+                                <h3>Consider phpmyadmin.</h3>
+                                <p>This is only meant to be a testing-tool. Entries are limited to 10 results, model depth is limited to two levels.</p>
                                 <md-button class="md-raised md-primary" ng-click="model.getData()">Try loading</md-button>
-                                <div>
-                                    <code >{{model.data}}</code>
+                                <div ng-if="model.data.length>0">
+                                    <div ng-repeat="entry in model.data track by $index">
+                                        <div ng-repeat="(key,val) in entry " layout="row">
+                                            <div flex="20">
+                                                {{key}}
+                                            </div>
+                                            <div flex>
+                                                <span ng-if="!model.isArray(val)">{{val || 'NULL'}}</span>
+                                                <div ng-if="model.isArray(val)" ng-repeat="subEntry in val track by $index" style="padding-bottom:8px">
+                                                    <div>{</div>
+                                                    <div ng-repeat="(key,val) in subEntry " layout="row">
+                                                        <div flex="50" style="padding-left:10px;">{{key}}</div>
+                                                        <div>{{val|| 'NULL'}}</div>
+                                                    </div>
+                                                    <div>}</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
-                                <form  ng-repeat="table in currentModel">
-
+                                <form ng-submit="model.put(model.addEntry)">
+                                    <div  ng-repeat="table in currentModel">
+                                        <h3>Table: {{table.table_name}} <span ng-if="$index>0">(user "_foreign" for auto-connection)</span></h3>
+                                        <md-input-container ng-repeat="field in table.fields">
+                                            <label>{{field.name}} ({{field.dataType}})</label>
+                                            <input type="text" ng-model="model.addEntry[table.table_name][field.name]">
+                                        </md-input-container>
+                                    </div>
+                                    <md-button class="md-raised" type="submit">Write Entry</md-button>
                                 </form>
+
                             </md-content>
                         </md-tab>
                     </md-tabs>

@@ -15,6 +15,7 @@ require_once(__DIR__.'/worker/worker.php');
 
 class concr extends unicore
 {
+
     function init()
     {
 
@@ -26,7 +27,7 @@ class concr extends unicore
         session::admin_restricted();
 
         */
-
+        $this->uni->include_directive('aceEditor');
         $this->uni->include_js_vars(['structure'=>json_encode($this->getStructure()),'api_point'=>'{{base}}_neoan/apps/api.app.php']);
         $this->uni->hook('main_hook','concr');
         $this->uni->output();
@@ -111,6 +112,7 @@ class concr extends unicore
         return $answer;
     }
     function createModel($obj){
+
         $path = path.'/model/'.$obj['name'];
         if(!$this->saveGuard($obj['name'],'model','model')){
             return ['error'=>'Model exists!'];
@@ -152,12 +154,14 @@ class concr extends unicore
 
     }
     private function writeInstallMigration($tables,$modelName){
+
         $mysql = '';
         $mySqlFields = [];
         $i = 0;
         foreach ($tables as $table){
 
             $mySqlFields[$i]['table_name'] = $table['table_name'];
+            $mySqlFields[$i]['primary'] = $table['primary'];
             $mySqlFields[$i]['fields'] = [];
 
             $mysql .= 'CREATE TABLE IF NOT EXISTS `' . $table['table_name'] ."` ( \n";
@@ -334,6 +338,19 @@ class concr extends unicore
             $q.='ALTER TABLE `'.$obj['table'].'` DROP COLUMN `'.$add.'`;'. "\n";
         }
         db::multi_query($q.' COMMIT;');
+    }
+    function putModelData($obj){
+        $relation = false;
+        foreach($obj as $table=>$values){
+            if(!$relation){
+                $relation = db::ask($table,$values);
+            } elseif($connect = array_search('_foreign',$values)){
+                $values[$connect] = $relation;
+                db::ask($table,$values);
+            } else {
+                db::ask($table,$values);
+            }
+        }
     }
     private function translate($name){
         $str = "<?php\n/**\n* Created by UNICORE-Concr " . date('m/d/Y') . "\n* \n*/\n";
