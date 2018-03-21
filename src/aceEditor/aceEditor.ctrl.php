@@ -9,13 +9,13 @@
 class aceEditor extends unicore {
     static function directive_require(){
         return [
-            ['function'=>'include_js','value'=>'https://cdnjs.cloudflare.com/ajax/libs/ace/1.2.6/ace.js'],
-            ['function'=>'include_js','value'=>'https://cdnjs.cloudflare.com/ajax/libs/ace/1.2.6/mode-php.js'],
-            ['function'=>'include_js','value'=>'https://cdnjs.cloudflare.com/ajax/libs/ace/1.2.6/mode-html.js'],
-            ['function'=>'include_js','value'=>'https://cdnjs.cloudflare.com/ajax/libs/ace/1.2.6/theme-ambiance.js'],
-            ['function'=>'include_js','value'=>'https://cdnjs.cloudflare.com/ajax/libs/ace/1.2.6/mode-javascript.js'],
-            ['function'=>'include_js','value'=>'https://cdnjs.cloudflare.com/ajax/libs/ace/1.2.6/mode-json.js'],
-            ['function'=>'include_js','value'=>'https://cdnjs.cloudflare.com/ajax/libs/ace/1.2.6/ext-beautify.js'],
+            ['function'=>'include_js','value'=>'https://cdnjs.cloudflare.com/ajax/libs/ace/1.3.1/ace.js'],
+            ['function'=>'include_js','value'=>'https://cdnjs.cloudflare.com/ajax/libs/ace/1.3.1/mode-php.js'],
+            ['function'=>'include_js','value'=>'https://cdnjs.cloudflare.com/ajax/libs/ace/1.3.1/mode-html.js'],
+            ['function'=>'include_js','value'=>'https://cdnjs.cloudflare.com/ajax/libs/ace/1.3.1/theme-ambiance.js'],
+            ['function'=>'include_js','value'=>'https://cdnjs.cloudflare.com/ajax/libs/ace/1.3.1/mode-javascript.js'],
+            ['function'=>'include_js','value'=>'https://cdnjs.cloudflare.com/ajax/libs/ace/1.3.1/mode-json.js'],
+            ['function'=>'include_js','value'=>'https://cdnjs.cloudflare.com/ajax/libs/ace/1.3.1/ext-beautify.js'],
         ];
 
     }

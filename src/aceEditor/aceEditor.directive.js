@@ -36,7 +36,10 @@ app.directive('aceEditor',['$timeout', '$interval',function($timeout,$interval){
                     });
 
                     scope.resize();
-
+                    if(typeof attr.beautify !== 'undefined'){
+                        var beautify = ace.require('ace/ext/beautify');
+                        beautify.beautify(scope.editor.session);
+                    }
                 },100);
 
 
