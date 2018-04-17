@@ -128,7 +128,7 @@ if(file_exists(neoan_path . '/base/applist.php') && sub(1) != 'NPHPinstall' && !
         while(false !== ($app = readdir($files))) {
 
             if(strpos($app, '.app.php')) {
-                $req_str .= "try { require_once('" . neoan_path . "/apps/" . $app . "');}" . ' catch(Exeption $e){ echo "Apps failed to load";}' . "\n\r";
+                $req_str .= "try { require_once('" . neoan_path . "/apps/" . $app . "');}" . ' catch(ErrorException $e){ echo "'.$app.' failed to load";}' . "\n\r";
                 require_once(neoan_path . '/apps/' . $app);
 
                 $class = substr($app,0,-8);
@@ -137,6 +137,10 @@ if(file_exists(neoan_path . '/base/applist.php') && sub(1) != 'NPHPinstall' && !
                     $exec_str .= "new " . $class . ";\n\r";
                 }
             }
+        }
+        // include autoloader if present
+        if(file_exists(neoan_path.'/apps/plugins/autoload.php')){
+            $req_str .= "try { require_once('" . neoan_path.'/apps/plugins/autoload.php' . "');}" . ' catch(ErrorException $e){ echo "autoloader failed to load";}' . "\n\r";
         }
         file_put_contents(neoan_path . '/base/applist.php',"<?php\n\r" . $expl . "\n\r" . $req_str . $exec_str . "//FILE CREATED: " . date('m/d/Y H:i:s',time()));
 
