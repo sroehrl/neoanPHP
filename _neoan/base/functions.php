@@ -138,7 +138,7 @@ if(file_exists(neoan_path . '/base/applist.php') && sub(1) != 'NPHPinstall' && !
                 }
             }
         }
-        // include autoloader if present
+        // include autoloader if present (composer)
         if(file_exists(neoan_path.'/apps/plugins/autoload.php')){
             $req_str .= "try { require_once('" . neoan_path.'/apps/plugins/autoload.php' . "');}" . ' catch(ErrorException $e){ echo "autoloader failed to load";}' . "\n\r";
         }
