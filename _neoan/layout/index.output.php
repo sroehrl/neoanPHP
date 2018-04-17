@@ -266,7 +266,7 @@ class layout
 	}
     function include_service($service){
 
-        $this->js .= $this->get_contents(src($service,'service'),'js');
+        $this->js .= $this->get_contents(src($service,'service'),'js',['base'=>base]);
         $ctrl = '/src/' . $service . '/' . $service .'.ctrl.php';
 
         if(file_exists(path.$ctrl)){
@@ -285,7 +285,7 @@ class layout
 	    if(empty($template)){
 	        $template = $directive;
         }
-	    $this->js .= $this->get_contents(src($directive,'directive'),'js',['templateUrl'=>template($template.'.directive')]);
+	    $this->js .= $this->get_contents(src($directive,'directive'),'js',['templateUrl'=>template($template.'.directive'),'base'=>base]);
 
 	    $sheet = '/src/' . $template . '/' . $template .'.directive.css';
 	    $ctrl = '/src/' . $template . '/' . $template .'.ctrl.php';
