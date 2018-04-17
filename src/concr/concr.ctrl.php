@@ -15,6 +15,7 @@ require_once(__DIR__.'/worker/worker.php');
 
 class concr extends unicore
 {
+
     function init()
     {
 
@@ -26,14 +27,14 @@ class concr extends unicore
         session::admin_restricted();
 
         */
-
+        $this->uni->include_directive('aceEditor');
         $this->uni->include_js_vars(['structure'=>json_encode($this->getStructure()),'api_point'=>'{{base}}_neoan/apps/api.app.php']);
         $this->uni->hook('main_hook','concr');
         $this->uni->output();
 
     }
     private function getStructure(){
-        require_once(path.'/src/concr/frames.php');
+        require_once(path.'/src/concr/_frames.php');
         return $frames;
     }
 
@@ -73,7 +74,7 @@ class concr extends unicore
     }
 
     function installModel($obj){
-        $sql = file_get_contents(path.'/model/'.explode('_',$obj['name'])[0].'/install.sql');
+        $sql = file_get_contents(path.'/model/'.$obj['name'].'/install.sql');
         db::multi_query($sql);
         return ['done'=>true];
     }
@@ -111,9 +112,10 @@ class concr extends unicore
         return $answer;
     }
     function createModel($obj){
+
         $path = path.'/model/'.$obj['name'];
         if(!$this->saveGuard($obj['name'],'model','model')){
-            return ['error'=>'Service exists!'];
+            return ['error'=>'Model exists!'];
         }
         if(!$this->versioning($path,'model',$obj['name'])){
             return ['error'=>'version!'];
@@ -123,46 +125,67 @@ class concr extends unicore
         $str .= "\t".'static function data($id){'."\n";
         if($obj['mysql']){
             $str .= "\t\t".'$answer = false;'."\n";
-            $str .= "\t\t".'$q = db::easy(\''.$obj['name'].'*\',[\'id\'=>$id]);'."\n";
+            $str .= "\t\t".'$q = db::easy(\''.$obj['name'].'.*\',[\'id\'=>$id]);'."\n";
             $str .= "\t\t".'if(!empty($q)){'."\n";
             $str .= "\t\t\t".'$answer = $q[0];'."\n";
-            $mysql = '';
-            $mySqlFields = [];
-            $i = 0;
+            $this->writeInstallMigration($obj['tables'],$obj['name']);
             foreach ($obj['tables'] as $table){
-                if($table['name'] != $obj['name']){
-                    $str .= "\t\t\t" .'$answer[\''.$table['name'] . '\'] = parent::undeleted(\'user\',\''.$table['name'] . '\',$id);'."\n";
+                if($table['table_name'] != $obj['name']){
+                    $split = explode('_',$table['table_name']);
+                    $str .= "\t\t\t" .'$answer[\''.$table['table_name'] . '\'] = parent::undeleted(\''.$split[0].'\',\''.substr($table['table_name'],strlen($split[0])+1) . '\',$id);'."\n";
                 }
-                $mySqlFields[$i]['table_name'] = $table['name'];
-                $mySqlFields[$i]['fields'] = [];
-
-                $mysql .= 'CREATE TABLE IF NOT EXISTS `' . $table['name'] ."` ( \n";
-
-                foreach ($table['fields'] as $field){
-                    $val = $this->mySqlTypes($field['type']) . ($field['name']==$table['primary']?'NOT NULL AUTO_INCREMENT':'');
-                    $mySqlFields[$i]['fields'][] = [$field['name']=>$val];
-                    $mysql .= '`'.$field['name'] . '` ' . $val . ','."\n";
-                }
-                $mysql .= 'PRIMARY KEY (`'.$table['primary'].'`)'."\n";
-                $mysql .= ') ENGINE=MyISAM DEFAULT CHARSET=utf8;'."\n";
-                $i++;
             }
-            $mysql .= 'COMMIT;';
+
             $str .= "\t\t".'}'."\n";
         }
         $str .= "\t\t".'return $answer;'."\n";
         $str .= "\t}\n";
         $str .= "}";
         $this->write(path.'/model/'.$obj['name'].'/'.$obj['name'].'.model.php',$str);
-        if(isset($mysql)&&isset($mySqlFields)){
-            $this->write(path.'/model/'.$obj['name'].'/install.sql',$mysql);
-            $this->write(path.'/model/'.$obj['name'].'/migrate.json',json_encode($mySqlFields));
+        if($obj['mysql']){
+
             $this->installModel($obj);
         }
         if(isset($obj['service'])&&$obj['service']){
             $this->createService($obj);
         }
         return ['error'=>false];
+
+    }
+    private function writeInstallMigration($tables,$modelName){
+
+        $mysql = '';
+        $mySqlFields = [];
+        $i = 0;
+        foreach ($tables as $table){
+
+            $mySqlFields[$i]['table_name'] = $table['table_name'];
+            $mySqlFields[$i]['primary'] = $table['primary'];
+            $mySqlFields[$i]['fields'] = [];
+
+            $mysql .= 'CREATE TABLE IF NOT EXISTS `' . $table['table_name'] ."` ( \n";
+
+            foreach ($table['fields'] as $field){
+                $val = $this->mySqlTypes($field['dataType']) . ($field['name']==$table['primary']?'NOT NULL AUTO_INCREMENT':'');
+                $is_null = false;
+                if(($field['name']!=$table['primary']&&$field['name']!='id')&&($field['dataType']=='datetime'||$field['dataType']=='int'||$field['dataType']=='varchar')){
+                    $is_null = true;
+                }
+                $mySqlFields[$i]['fields'][] = [
+                    'name'=>$field['name'],
+                    'dataType'=>$field['dataType'],
+                    'nullable'=>$is_null,
+                    'default'=>($field['dataType']=='timestamp'?'CURRENT_TIMESTAMP':null)
+                ];
+                $mysql .= '`'.$field['name'] . '` ' . $val . ','."\n";
+            }
+            $mysql .= 'PRIMARY KEY (`'.$table['primary'].'`)'."\n";
+            $mysql .= ') ENGINE=MyISAM DEFAULT CHARSET=utf8;'."\n";
+            $i++;
+        }
+        $mysql .= 'COMMIT;';
+        $this->write(path.'/model/'.$modelName.'/install.sql',$mysql);
+        $this->write(path.'/model/'.$modelName.'/migrate.json',json_encode($mySqlFields));
 
     }
     function createService($obj){
@@ -290,6 +313,45 @@ class concr extends unicore
         $this->ctrl($obj,$ownService,$skipCreation);
         return ['error'=>false,'location'=>'../'.$obj['name'].'/'];
     }
+    function saveMigration($obj){
+        $migrate = $obj['model'];
+        foreach ($migrate as $key =>$value){
+            unset($migrate[$key]['db']);
+            unset($migrate[$key]['compared']);
+            unset($migrate[$key]['showAdd']);
+
+        }
+        $this->writeInstallMigration($migrate,$obj['name']);
+
+    }
+
+    function migrate($obj){
+
+        $q = '';
+        foreach($obj['migrate']['add'] as $add){
+            $q.='ALTER TABLE `'.$obj['table'].'` ADD `'.$add['name'].'`'.$this->mySqlTypes($add['dataType']).';' . "\n";
+        }
+        foreach($obj['migrate']['alter'] as $add){
+            $q.='ALTER TABLE `'.$obj['table'].'` MODIFY `'.$add['name'].'`'.$this->mySqlTypes($add['dataType']).';'. "\n";
+        }
+        foreach($obj['migrate']['drop'] as $add){
+            $q.='ALTER TABLE `'.$obj['table'].'` DROP COLUMN `'.$add.'`;'. "\n";
+        }
+        db::multi_query($q.' COMMIT;');
+    }
+    function putModelData($obj){
+        $relation = false;
+        foreach($obj as $table=>$values){
+            if(!$relation){
+                $relation = db::ask($table,$values);
+            } elseif($connect = array_search('_foreign',$values)){
+                $values[$connect] = $relation;
+                db::ask($table,$values);
+            } else {
+                db::ask($table,$values);
+            }
+        }
+    }
     private function translate($name){
         $str = "<?php\n/**\n* Created by UNICORE-Concr " . date('m/d/Y') . "\n* \n*/\n";
         $str .= "class frame_translate{\n";
@@ -391,20 +453,24 @@ class concr extends unicore
         $this->write(path.'/frame/'.$array['name'].'/'.$array['name'].'.php', $str);
 
     }
-    private function prep_array($array){
-        $return = "[";
+    private function prep_array($array,$indent="\t"){
+        $oldIndent = $indent;
+        $return = "[\n".$oldIndent;
         $i = 0;
         foreach ($array as $key => $value){
-            $return .= ($i>0?',':''). (!is_int($key)?"'" . $key . "'=>":'');
+            $return .= ($i>0?','."\n".$oldIndent:''). (!is_int($key)?"'" . $key . "'=>":'');
             if(is_array($value)){
-                $return .= $this->prep_array($value);
+                if(count($value)>1){
+                    $indent.="\t";
+                }
+                $return .= $this->prep_array($value,$indent);
             } else {
                 $return .= ($key!=='modules'? "'":'') . $value .($key!=='modules'? "'":'');
             }
             $i++;
 
         }
-        $return .= "]";
+        $return .= "\n".$oldIndent."]";
         return $return;
     }
     private function view($name, $hasController=false){
@@ -515,10 +581,84 @@ class concr extends unicore
         return $return;
     }
     function pull($obj){
-        session::api_restricted();
         // does exist locally?
+        $type = $obj['folder']['type'];
+        $localPath = path;
+        switch($type){
+            case 'component':
+                $localPath .= '/src/'.$obj['folder']['name'];
+                $exists = file_exists($localPath.'/version.json');
+                break;
+            default:
+                $localPath .= '/'.$type.'/'.$obj['folder']['name'];
+                $exists = file_exists($localPath.'/version.json');
+        }
         // compare versions
+        if($exists){
+            $installed = json_decode(file_get_contents($localPath.'/version.json'),true);
+            $localVersion = explode('.',$installed['version']);
+            $remoteVersion = explode('.',$obj['folder']['version']);
+            $proceed = true;
+            $higher = false;
+            foreach ($localVersion as $i =>$num){
+
+                if(intval($num)>intval($remoteVersion[$i])){
+                    $proceed = false;
+                } elseif(!$higher){
+                    $higher = true;
+                }
+            }
+            if(!$proceed&&$higher){
+                return ['error'=>'Local version is greater!!'];
+            }
+        }
         // copy
+
+        worker::recursiveCopy(dirname(path).$obj['remote'].'/'.$obj['folder']['name'],$localPath);
+
+        return ['error'=>false];
+
+    }
+    function loadModelData($obj){
+
+        $class = $obj['name'].'_model';
+        load::model($obj['name']);
+        $answer = [];
+        for($i=1;$i<11;$i++){
+            $try = $class::data($i);
+            if(!empty($try)){
+                $answer[] = $try;
+            }
+        }
+        return $answer;
+    }
+    function loadModel($obj){
+        // load migration
+        if(!file_exists(path.'/model/'.$obj['name'].'/migrate.json')){
+            return ['error'=>true];
+        }
+        $migration = json_decode(file_get_contents(path.'/model/'.$obj['name'].'/migrate.json'),true);
+
+
+
+        foreach ($migration as $i=>$table){
+            $cp = [];
+            $db = db::data('SELECT COLUMN_NAME, DATA_TYPE, IS_NULLABLE, COLUMN_DEFAULT 
+              FROM INFORMATION_SCHEMA.COLUMNS WHERE table_name = "'.$table['table_name'].'" AND table_schema = "'.db_name.'"')['data'];
+            if(!empty($db)){
+                foreach ($db as $is){
+                    $cp[] = [
+                        'name'=>$is['COLUMN_NAME'],
+                        'dataType'=>$is['DATA_TYPE'],
+                        'nullable'=>($is['IS_NULLABLE']=='NO'?false:true),
+                        'default'=>$is['COLUMN_DEFAULT']
+                    ];
+                }
+            }
+            $migration[$i]['db'] =$cp;
+        }
+
+        return $migration;
 
     }
     private function version($name,$type){

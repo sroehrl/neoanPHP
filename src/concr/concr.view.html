@@ -28,9 +28,10 @@
         </md-sidenav>
         <div flex layout-padding>
             <div ng-if="working">Working...</div>
+            <!-- merge -->
             <div ng-if="!state">
                 <h2>Welcome to concr</h2>
-                <p>Merge responsibly</p>
+                <p>SECURITY warning: Do not include concr in your production!</p>
 
                 <div layout="row">
                     <md-content flex="35">
@@ -184,20 +185,27 @@
                 <md-checkbox ng-model="specs.mysql" aria-label="mysql?">
                     Uses MYSQL-database
                 </md-checkbox>
+
                 <div ng-if="specs.mysql">
+                    <md-input-container>
+                        <label>Context</label>
+                        <md-select ng-model="specs.dbFrame" required ng-init="specs.dbFrame = frames[0].name">
+                            <md-option ng-repeat="frame in frames" value="{{frame.name}}">{{frame.name}}</md-option>
+                        </md-select>
+                    </md-input-container>
                     <div ng-repeat="table in specs.tables">
                         <md-input-container>
                             <label>Table-Name</label>
-                            <input type="text" ng-model="specs.tables[$index].name">
+                            <input type="text" ng-model="specs.tables[$index].table_name">
                         </md-input-container>
-                        <div layout="row" ng-show="specs.tables[$index].name.length>2">
+                        <div layout="row" ng-show="specs.tables[$index].table_name.length>2">
                             <div ng-repeat="field in table.fields">
                                 <div style="border:1px dotted;">
                                     <md-input-container>
                                         <label>Name</label>
                                         <input type="text" ng-model="table.fields[$index].name" required>
                                     </md-input-container>
-                                    <md-select ng-model="table.fields[$index].type">
+                                    <md-select ng-model="table.fields[$index].dataType">
                                         <md-option value="int">int</md-option>
                                         <md-option value="varchar">varchar</md-option>
                                         <md-option value="timestamp">timestamp (current timestamp)</md-option>
@@ -354,8 +362,133 @@
                 </md-checkbox>
                 <md-button type="submit" class="md-primary">CREATE</md-button>
             </form>
+            <!-- migration -->
+            <div ng-if="!working" ng-show="state=='editModel'">
+                <md-input-container>
+                    <label>In regards to frame</label>
+                    <md-select ng-model="model.frame">
+                        <md-option ng-repeat="frame in frames" value="{{frame.name}}">{{frame.name}}</md-option>
+                    </md-select>
+                </md-input-container>
+                <md-button class="md-raised md-primary" ng-repeat="mod in local.model | filter:{name:'!index'}" ng-click="model.load(mod.name)">{{mod.name}}</md-button>
+                <hr>
+                <h3 ng-if="currentModel.error">This model does not seem to have a db-structure.</h3>
+                <div ng-if="currentModel&&!currentModel.error">
+                    <md-tabs md-dynamic-height>
+                        <md-tab label="structure">
+                            <md-content>
+                                <div  ng-repeat="table in currentModel">
+                                    <h4>Table: {{table.table_name}}</h4>
+                                    <md-button class="md-raised md-primary" ng-if="installer" ng-click="model.install()">Do you want to run install on {{model.frame}}?</md-button>
+                                    <div layout="row" style="margin-bottom:4px">
+                                        <div flex="33">Property</div>
+                                        <div flex="33">Model</div>
+                                        <div flex="33">Database</div>
+                                    </div>
+                                    <div layout="row" ng-repeat="(key,compare) in table.compared">
+
+                                        <div flex="33">
+                                            <i class="fa fa-times pointer" style="color:red" ng-click="model.delete($parent.$index,key)"></i>
+                                            <strong>{{key}}</strong>
+
+                                        </div>
+                                        <div flex="33">
+
+                                            <span ng-if="!compare.mod.dataType" style="color:red">DOES NOT EXIST</span>
+                                            <span ng-if="compare.mod.dataType&&compare.mod.dataType==compare.db.dataType">
+                                                {{compare.mod.dataType}}
+                                            </span>
+                                                        <span ng-if="compare.mod.dataType&&compare.mod.dataType!==compare.db.dataType" style="color:red">
+                                                {{compare.mod.dataType}}
+                                            </span>
+                                                        <span ng-if="compare.mod.dataType&&compare.mod.nullable!==compare.db.nullable" style="color:red">
+                                                NULL:{{compare.mod.nullable}}
+                                            </span>
+                                                        <span ng-if="compare.mod.dataType&&compare.mod.default!==compare.db.default" style="color:red">
+                                                Default: {{compare.mod.default}}
+                                            </span>
+                                        </div>
+                                        <div flex="33">
+                                            {{compare.db.dataType}}
+                                            <span ng-if="!compare.db.dataType" style="color:red">DOES NOT EXIST</span>
+                                        </div>
+                                    </div>
+                                    <form ng-if="table.showAdd" ng-submit="model.add($index,newField)" layout="column" >
+                                        <div>
+                                            <md-input-container>
+                                                <label>name</label>
+                                                <input type="text" ng-model="newField.name">
+                                            </md-input-container>
+                                        </div>
+                                        <div>
+                                            <md-input-container>
+                                                <label>Type</label>
+                                                <md-select ng-model="newField.dataType">
+                                                    <md-option value="int">Int</md-option>
+                                                    <md-option value="varchar">varchar</md-option>
+                                                    <md-option value="timestamp">current timestamp</md-option>
+                                                    <md-option value="datetime">datetime</md-option>
+                                                </md-select>
+                                            </md-input-container>
+                                        </div>
+
+                                        <div flex="50">
+                                            <md-button type="submit">add field</md-button>
+                                        </div>
+                                    </form>
+                                    <div layout="row">
+                                        <div flex="33"><md-button class="md-fab md-mini" ng-click="table.showAdd=!table.showAdd"><i class="fa fa-plus"></i></md-button></div>
+                                        <div flex="33"><md-button class="md-raised md-accent" ng-click="model.migrate($index)">Migrate to DB -></md-button></div>
+                                    </div>
+
+                                </div>
+                            </md-content>
+                        </md-tab>
+                        <md-tab label="enties">
+                            <md-content>
+                                <h3>Consider phpmyadmin.</h3>
+                                <p>This is only meant to be a testing-tool. Entries are limited to 10 results, model depth is limited to two levels.</p>
+                                <md-button class="md-raised md-primary" ng-click="model.getData()">Try loading</md-button>
+                                <div ng-if="model.data.length>0">
+                                    <div ng-repeat="entry in model.data track by $index">
+                                        <div ng-repeat="(key,val) in entry " layout="row">
+                                            <div flex="20">
+                                                {{key}}
+                                            </div>
+                                            <div flex>
+                                                <span ng-if="!model.isArray(val)">{{val || 'NULL'}}</span>
+                                                <div ng-if="model.isArray(val)" ng-repeat="subEntry in val track by $index" style="padding-bottom:8px">
+                                                    <div>{</div>
+                                                    <div ng-repeat="(key,val) in subEntry " layout="row">
+                                                        <div flex="50" style="padding-left:10px;">{{key}}</div>
+                                                        <div>{{val|| 'NULL'}}</div>
+                                                    </div>
+                                                    <div>}</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <form ng-submit="model.put(model.addEntry)">
+                                    <div  ng-repeat="table in currentModel">
+                                        <h3>Table: {{table.table_name}} <span ng-if="$index>0">(user "_foreign" for auto-connection)</span></h3>
+                                        <md-input-container ng-repeat="field in table.fields">
+                                            <label>{{field.name}} ({{field.dataType}})</label>
+                                            <input type="text" ng-model="model.addEntry[table.table_name][field.name]">
+                                        </md-input-container>
+                                    </div>
+                                    <md-button class="md-raised" type="submit">Write Entry</md-button>
+                                </form>
+
+                            </md-content>
+                        </md-tab>
+                    </md-tabs>
+
+
+                </div>
+            </div>
 
         </md-content>
     </div>
-
+    </div>
 </div>
