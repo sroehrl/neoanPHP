@@ -1,3 +1,10 @@
+# Download
+`composer require sroehrl/neoan-php`
+
+or
+
+`git clone https://github.com/sroehrl/neoanPHP myproject`
+
 # Installation
 1. Change .htaccess accordingly (in most cases changing the rewriteBase is enough)
 2. Run installation by visiting your installation in a browser.
