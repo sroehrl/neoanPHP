@@ -3,5 +3,12 @@
     "description": "the efficient PHP framework",
     "require": {
         "php": "^5.3.3 || ^7.0"
-    }
+    },
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "neoan",
+            "email": "neoan@neoan.us"
+        }
+    ],
 }
