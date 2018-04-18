@@ -1,9 +1,41 @@
 # Download
-`composer require sroehrl/neoan-php`
+
+**Composer**
+
+{
+
+&nbsp;&nbsp;"require":{
+
+&nbsp;&nbsp;&nbsp;&nbsp;"mnsami/composer-custom-directory-installer": "1.1.*",
+
+&nbsp;&nbsp;&nbsp;&nbsp;"sroehrl/neoan-php":"2.0.11"
+
+&nbsp;&nbsp;&nbsp;&nbsp;},   
+&nbsp;&nbsp;&nbsp;&nbsp;"extra":{
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"installer-paths":{
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"./neoan/":["sroehrl/neoan-php"]
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}
+
+}
+
+`composer install`
 
 or
 
+**GitHub**
+
 `git clone https://github.com/sroehrl/neoanPHP myproject`
+
+or
+
+**Archive**
+
+`https://github.com/sroehrl/neoanPHP/archive/2.0.11.zip`
 
 # Installation
 1. Change .htaccess accordingly (in most cases changing the rewriteBase is enough)
