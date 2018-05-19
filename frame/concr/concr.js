@@ -1,22 +1,14 @@
 /**
  * Created by Stefan on 7/26/2016.
  */
-app.config(function($mdThemingProvider,$httpProvider,adalAuthenticationServiceProvider) {
+app.config(function($mdThemingProvider,$httpProvider) {
     $mdThemingProvider.theme('default')
         .primaryPalette('teal')
         .accentPalette('amber')
         .dark();
-    adalAuthenticationServiceProvider.init({
-            clientId: "9f08d99b-5e4f-4d14-90b4-aef8d2c0e2a9",
-            requireADLogin: false,
-            anonymousEndpoints: [
-                '/'
-            ]
-        },
-        $httpProvider
-    );
+    
 });
-app.controller('frameCtrl',['$scope','$rootScope','$localStorage','$mdDialog','$q','adalAuthenticationService','com',function($scope,$rootScope,$localStorage,$mdDialog,$q,adalAuthenticationService,com){
+app.controller('frameCtrl',['$scope','$rootScope','$localStorage','$mdDialog','$q','com',function($scope,$rootScope,$localStorage,$mdDialog,$q,adalAuthenticationService,com){
     $scope.$storage = $localStorage;
     var handleObj = {
         user: {
